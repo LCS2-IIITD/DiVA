@@ -11,3 +11,5 @@ pandas==1.0.5
 authlib==0.15.2
 google_api_python_client==1.12.8
 protobuf==3.14.0
+flask_session==0.4.0
+python-dotenv==0.19.1
