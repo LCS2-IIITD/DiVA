@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiVA</title>
+
+    <!-- UI KIT IMPORT -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/uikit.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.dataTables.min.css') }}" />
+    <script src="{{ url_for('static', filename='js/uikit.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/uikit-icons.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chroma.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/models-states.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diff_options.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3fc.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/three.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/OrbitControls.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/Stats.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3-force-boundary.min.js') }}"></script>
+    <script>
+        var filename = '{{ filename }}';
+        var positioned = '{{ positioned }}';
+        var data = '{{ positioned_data | safe }}';
+        if(positioned === 'true'){
+            data = JSON.parse(data);
+            positioned = true
+            // console.log(data, positioned)
+        }
+        else{
+            positioned = false
+            data = {}
+            data.nodes = []
+            data.links = []
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <style>
+        /*
+            LAYOUT CSS
+        */
+        * {
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif !important;
+            font-size: 11px !important;
+        }
+        
+        html, body {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .flex-container-main {
+        /* We first create a flex layout context */
+            display: flex;
+            
+            /* Then we define the flow direction 
+                and if we allow the items to wrap 
+            * Remember this is the same as:
+            * flex-direction: row;
+            * flex-wrap: wrap;
+            */
+            flex-flow: nowrap;
+            
+            /* Then we define how is distributed the remaining space */
+            justify-content: space-around;
+            
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            height: 100%;
+        }
+
+        .font-head {
+            font-size: 14px !important;
+        }
+
+        .font-sub {
+            font-size: 11px !important;
+        }
+
+        .font-12 {
+            font-size: 12px !important;
+        }
+
+        .flex-item-100 {
+            height: 100%;
+        }
+
+        .footer {
+            height: 40px;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+            background-color: #ccc;
+        }
+
+        .graph-container {
+            /*min-height: calc(100vh - 40px);*/
+            height: 100%;
+        }
+
+        .vertical-horizontal-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #myProgress {
+            width: 60%;
+            background-color: #353A40;
+            border-radius: 10px;
+        }
+
+        #myBar {
+            width: 100%;
+            height: 15px;
+            background-color: #353A40;
+            border-radius: 10px;
+        }
+
+        .tab {
+            height: 25px;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+            background-color: rgba(0,0,0,.03);
+            white-space: nowrap;
+            display: flex;
+            flex-wrap: nowrap;
+            z-index: 1000;
+        }
+
+        /* Style the buttons inside the tab */
+        .tab button {
+            background-color: inherit;
+            display: inline-block;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 5px 5px;
+            transition: 0.3s;
+            font-size: 18px;   
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #bbb;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            border-top: none;
+            overflow: hidden;
+            z-index: 1;
+            height: calc(100% - 25px);
+        }
+
+        .tablinks {
+            font-size: 13px !important;
+        }
+
+        ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+        }
+        
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+        background: #888; 
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+        }
+
+        .bold-text {
+            font-weight: 900;
+        }
+
+        /* Style the buttons that are used to open and close the accordion panel */
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: 0.4s;
+        }
+
+        /* Add a background color to the button if it is clicked on (add the .accordian-active class with JS), and when you move the mouse over it (hover) */
+        .accordion:hover {
+            background-color: #ccc;
+        }
+
+        .accordian-active {
+            background-color: #ccc;
+        }
+
+        /* Style the accordion panel. Note: hidden by default */
+        .panel {
+            background-color: white;
+            display: none;
+            overflow: hidden;
+        }
+
+        .accordion:after {
+            content: '\02795'; /* Unicode character for "plus" sign (+) */
+            font-size: 13px;
+            color: #777;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .accordian-active:after {
+            content: "\2796"; /* Unicode character for "minus" sign (-) */
+        }
+
+        .diff-group {
+            display: none;
+        }
+
+        .main-holder {
+            height: calc(100% - 65px);
+            width: 100%;
+        }
+
+        #range-wrap {
+            position: relative;
+        }
+
+        .bubble {
+            background: red;
+            color: white;
+            padding: 4px 12px;
+            position: relative;
+            border-radius: 4px;
+            left: -50%;
+            transform: translateX(50%);
+        }
+        .bubble::after {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: red;
+            top: -1px;
+            left: 50%;
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="bg-dark navbar-dark d-flex align-items-center p-2" style="height: 40px;">
+        <a class="navbar-brand font-head" href="#">DiVA</a>   
+        <ul class="ml-auto nav m-0 p-0 align-items-center" style="flex-direction: row;">
+            <!-- PROFILE DROPDOWN - scrolling off the page to the right -->
+            <li class="nav-item">
+                <a href="#" class="nav-link text-white" id='compare_view' aria-expanded="false" onclick="window.open('/compare', 'COMPARE_WINDOW')">
+                    Open Compare View
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link text-white" id='data_view' aria-expanded="false" onclick="window.open('/viewData', 'DATA_WINDOW')">
+                    Open Data View
+                </a>
+            </li>
+            <!-- <li class="nav-item">
+                <a href="#" class="nav-link text-white" id='download_network_button' aria-expanded="false">
+                    Download Network
+                </a>
+            </li> -->
+            <!-- <li class="nav-item">
+                <a href="#" class="nav-link text-white" onclick="CreatePDFfromHTML()" aria-expanded="false">
+                    Download Report
+                </a>
+            </li> -->
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle text-white" id="navDropDownLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Downloads
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navDropDownLink">
+                    <!-- <a class="dropdown-item" href='/google/logout'>Logout</a> -->
+                    <a href="#" class="dropdown-item" onclick="CreatePDFfromHTML()" aria-expanded="false">
+                        Download Report
+                    </a>
+                    <a href="#" class="dropdown-item" id='download_network_button' aria-expanded="false">
+                        Download Network
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle text-white" id="navDropDownLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img src="{{ pic_link }}" height="25px" width="25px" style="border-radius: 15px;" />
+                    &nbsp;&nbsp;{{ name }}
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navDropDownLink">
+                    <a class="dropdown-item" href='/google/logout'>Logout</a>
+                </div>
+            </li>
+        </ul>
+    </nav>  
+    <div style="height: calc(100% - 40px); width: 100%; display: flex;">
+        <div class="toast" style="position: absolute; top: 10px; right: 10px; display: none;" id="toast-status">
+            <div class="toast-header">
+                Diffusion Status
+            </div>
+            <div class="toast-body">
+                Diffusion algorithm has been computed
+            </div>
+        </div>
+        <div style="height: 100%; width: 20%; flex: 1">
+            <div style="height: 55%; background-color: #fcfcfc; border: 1px solid rgba(0,0,0,.125)">
+                <div style="height: 100%; overflow-y: auto; background-color: #fcfcfc;">
+                    <div class="tab" style="top: 0; background-color: rgba(0,0,0,.03);">
+                        <button class="tablinks 1" onclick="openTab(event, 'Diffusion', '1')" id="defaultOpen" uk-tooltip="Select the algorithm you want to visualize the diffusion on">Diffusion</button>
+                        <button class="tablinks 1" onclick="openTab(event, 'Appearance', '1')" uk-tooltip="Options to change and set the appearance of the graph">Appearance</button>
+                        <button class="tablinks 1" onclick="openTab(event, 'Layout', '1')" uk-tooltip="Change the layout of the displayed graph">Layout</button>
+                    </div>
+                    
+
+                    <div id="Diffusion" class="tabcontent 1" style="padding: 5px; overflow-y: auto;">
+                        <div class="uk-margin p-2">
+                            <label class="uk-form-label" for="form-stacked-select">Select Diffusion Algorithm:</label>
+                            <div class="uk-form-controls">
+                                <select class="uk-select" id="select-diffusion" onchange="changeOnSelect('1', 'select-diffusion')">
+                                    <option value="custom_algo">Upload your own</option>
+                                    <option value="IC">Independent Cascade</option>
+                                    <option value="SI">SI</option>
+                                    <option value="SIR">SIR</option>
+                                    <option value="SIS">SIS</option>
+                                    <option value="SEIS" disabled>SEIS</option>
+                                    <option value="SEIR" disabled>SEIR</option>
+                                    <option value="PTH" disabled>Profile Threshold</option>
+                                    <option value="threshold" disabled>Threshold</option>
+                                    <option value="gen_threshold" disabled>General Threshold</option>
+                                    <option value="kert_threshold" disabled>Kertesz Threshold</option>
+                                    <option value="profile" disabled>Profile</option>
+                                </select>
+                            </div>
+                            <div class="diffusion-config">
+                                <form id="diff-form" class="diff-form"> 
+
+                                </form>
+                                <!-- <button class="btn btn-success btn-sm btn-block mt-3" onclick="CreatePDFfromHTML()">Download Report</button> -->
+                                <button class="btn btn-success btn-sm btn-block mt-3" id='reset-button'>Reset iterations</button>
+                                <a id="downloadAnchorElem" style="display:none"></a>
+                                <a class="btn btn-info btn-sm btn-block mt-3 disabled" onclick="downloadData()" href="#" id="download-iterations">Download Iterations</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="Appearance" class="tabcontent 1" >
+                        <!-- <div class="tab" style="position: sticky; top: 0; background-color: rgba(0,0,0,.03);">
+                            <button class="tablinks 2" onclick="openTab(event, 'Nodes', '2')" id="defaultOpen">Nodes</button>
+                            <button class="tablinks 2" onclick="openTab(event, 'Edges', '2')">Edges</button>
+                        </div>
+                        <div id="Nodes" class="tabcontent 2 p-2" style="padding: 5px;">
+                            <form id="nodes_appearance">
+                                <label for="node_color">Set node color:</label>
+                                <input type="color" id="node_color" name="node_color" value="#000088"><br><br>
+                            </form>
+                        </div>
+                        <div id="Edges" class="tabcontent 2 p-2" style="padding: 5px;">
+                            <form>
+                                <label for="edge_color">Set edge color:</label>
+                                <input type="color" id="edge_color" name="edge_color" value="#cfcfcf"><br><br>
+                            </form>
+                        </div> -->
+                        <button class="accordion">Canvas Appearance</button>
+                        <div class="panel" style="padding: 5px;">
+                            <form id="canvas_appearance">
+                                <label for="canvas_color">Set background color:</label>
+                                <input type="color" id="canvas_color" name="canvas_color" value="#ffffff"><br><br>
+                            </form>
+                        </div>
+                        <button class="accordion">Node Appearance</button>
+                        <div class="panel" style="padding: 5px;">
+                            <form id="nodes_appearance">
+                                <label for="node_color">Set node color:</label>
+                                <input type="color" id="node_color" name="node_color" value="#000088"><br><br>
+                            </form>
+                        </div>
+                        <button class="accordion">Edge Appearance</button>
+                        <div class="panel" style="padding: 5px;">
+                            <form>
+                                <label for="edge_color">Set edge color:</label>
+                                <input type="color" id="edge_color" name="edge_color" value="#cfcfcf"><br><br>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div id="Layout" class="tabcontent 1" style="padding: 5px; overflow-y: auto;">
+                        <div class="uk-margin p-2" style="overflow-y: auto;">
+                            <!-- <label class="uk-form-label" for="form-stacked-select">Select layout of graph:</label>
+                            <div class="uk-form-controls">
+                                <select class="uk-select" id="form-stacked-select">
+                                    <option>Force Directed</option>
+                                    <option>Breadth First</option>
+                                    <option>Circular</option>
+                                </select>
+                            </div> -->
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Force Center X coordinate: <span class="float-right" uk-icon="question" uk-tooltip="Set center X."></span></label>
+                            <input type="number" class="form-control" min="-1000" value="-500" step="1" max="1000" id="force_center_x" placeholder="beta" name="force_center_x">
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Force Center Y coordinate: <span class="float-right" uk-icon="question" uk-tooltip="Set center Y."></span></label>
+                            <input type="number" class="form-control" min="-1000" value="-500" step="1" max="1000" id="force_center_y" placeholder="beta" name="force_center_y">
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Many Body force strength: <span class="float-right" uk-icon="question" uk-tooltip="Set many body force strength value."></span></label>
+                            <input type="number" class="form-control" min="-1000" value="-500" step="1" max="1000" id="force_strength" placeholder="beta" name="force_strength">
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Link distance accessor value: <span class="float-right" uk-icon="question" uk-tooltip="Set link distance accessor value."></span></label>
+                            <input type="number" class="form-control" min="0" value="20" step="1" max="1000" id="link_distance" placeholder="beta" name="link_distance">
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Link distance strength: <span class="float-right" uk-icon="question" uk-tooltip="Set link strength."></span></label>
+                            <input type="number" class="form-control" min="0" value="-50" step="1" max="1000" id="link_strength" placeholder="beta" name="link_strength">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 45%; max-height: 50%; border: 1px solid rgba(0,0,0,.125)">
+                <div style="height: 100%; background-color: #fcfcfc;">      
+                    <div class="tab" style="background-color: rgba(0,0,0,.03);">
+                        <button class="tablinks 1" onclick="openTab(event, 'initial-config', '5')" id="defaultOpen" uk-tooltip="Options to change and set initial infected nodes">Initial Configuration</button>
+                    </div>
+                    <div id="initial-config" class="tabcontent 5 p-2" style="padding: 5px; overflow-y: auto; ">
+                        <form id="seed-form" class="seed-form uk-form-stacked" enctype="multipart/form-data"> 
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Initial infected nodes<span class="float-right" uk-icon="question" uk-tooltip="Upload initial infected nodes as csv"></span></label>
+                            <div class="custom-file">
+                              <input type="file" class="custom-file-input" id="seedFile" name="seeds" required>
+                              <label class="custom-file-label" for="customFile">Upload file</label>
+                            </div>
+                            <button class="btn btn-info btn-sm btn-block mt-1" type="button" onclick="sendSeedNodes()">
+                                Upload
+                            </button>
+                        </form>
+                        <div class="form-check mt-2">
+                          <input class="form-check-input" type="checkbox" name="is_seed_nodes" value="" id="is_seed_nodes">
+                          <label class="form-check-label" for="defaultCheck1">
+                            Use uploaded nodes
+                          </label>
+                        </div>
+                        <hr>
+                        <label for="seedNodes" class="col-form-label" style="width: 100%;">Fraction Infected Nodes<span class="float-right" uk-icon="question" uk-tooltip="Set fraction of initial infected nodes"></span></label>
+                        <input type="number" class="form-control" min="0" value="0.1" step="0.01" max="1" id="percent_infected" placeholder="beta" name="fraction_infected">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="height: calc(100%); width: 60%; flex: 3; position: relative">
+            <div class="d-flex justify-content-center align-items-center flex-column" style="position: absolute; top: 0; left: 0; height: 100%; width: 100%; background-color: #222; z-index: 300" id="initial-black-screen">
+                <h2 class="text-white">Loading Graph...</h2> 
+                <div class="spinner-border text-light" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+            <div class="tab" style=" top: 0; background-color: rgba(0,0,0,.03);">
+                <button class="tablinks 6" onclick="openTab(event, 'graph-view', '6')" id="defaultOpen" uk-tooltip="Options to view network">Graph View</button>
+                <button class="tablinks 6" onclick="openTab(event, 'report-view', '6')" uk-tooltip="Options to view report">Report View</button>
+                <button class="tablinks 6 d-none" onclick="window.open('/compare', 'COMPARE_WINDOW')" uk-tooltip="Options to compare algorithms">Compare View</button>
+                <button class="tablinks 6 d-none" onclick="window.open('/viewData', 'DATA_WINDOW')" uk-tooltip="View data in tabular format">Data View</button>
+            </div>  
+            <div id="graph-view" class="tabcontent 6 main-holder" style="width: 100%;">
+                <div style="width: 100%; height: 100%;" class="d-flex flex-row">
+                    <div class="graph-container" id='graph-view-inner' style="display: block; width: calc(100% - 30px)">
+                    </div>
+                    <div class="sideGraphToolbar d-flex flex-column justify-content-end align-items-center" style="height: 100%; width: 30px; background-color: rgba(0,0,0,.03); border-left: 1px solid rgba(0,0,0,.125);">
+                        
+                        <div class="btn-group-vertical" data-toggle="buttons">
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" id="zoomOut" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <img src="{{ url_for('static', filename='images/zoom-out.svg') }}">
+                            </div>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" id="zoomIn" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <img src="{{ url_for('static', filename='images/zoom-in.svg') }}">
+                            </div>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <img src="{{ url_for('static', filename='images/fullscreen-exit.svg') }}">
+                            </div>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <img src="{{ url_for('static', filename='images/arrows-move.svg') }}">
+                            </div>
+                          </div>
+                    </div>
+                </div>
+                
+            <!--<div class="graph-container uk-flex uk-flex-middle uk-flex-center">
+                <button class="uk-button uk-button-default">Load Graph</button>
+            </div>-->
+            </div>
+            <div id="report-view" class="tabcontent 6 main-holder" style="padding: 5px;">
+                <div class="graph-container uk-flex uk-flex-middle uk-flex-center" id="RetweetReport-holder">
+                    <canvas id="RetweetReport"></canvas>
+                </div>
+            </div>
+            
+            
+            <div class="footer uk-flex uk-flex-middle uk-flex-center" style='height: 40px !important'>
+                <button class="uk-icon-button" uk-icon="play" style="height: 25px; width: 25px;" id='start-diffusion' uk-tooltip="Play diffusion visualization."></button>
+                &nbsp;&nbsp;
+                <button href="" class="uk-icon-button" uk-icon="chevron-double-right" style="height: 25px; width: 25px;" id='diffusion-step' uk-tooltip="Increment by one timestep."></button>
+                &nbsp;&nbsp;
+                <div style="width: 40%" class="d-flex justify-content-center align-items-center range-wrap">
+                    <input type="range" min="0" max="99" value="0" steps="1" class="slider" id="myBar" name="timeline">   
+                    <output for="timeline" onforminput="value = timeline.valueAsNumber;" id="timeline-output" class="bubble d-none"></output>   
+                </div>
+                
+                &nbsp;&nbsp;
+                Iteration: &nbsp;<span id="slider-time">0</span>
+            </div>
+        </div>
+        <div style="height: calc(100%); width: 20%; border-left: 1px solid rgba(0,0,0,.125); flex: 1">
+            <div style="height: 55%; background-color: #fcfcfc; border-bottom: 1px solid rgba(0,0,0,.125)">
+                <div style="height: 100%; background-color: #fcfcfc;">
+                    <div class="tab" style="top: 0; background-color: rgba(0,0,0,.03);">
+                        <button class="tablinks 3" onclick="openTab(event, 'Context', '3')" id="defaultOpen">Context</button>
+                        <button class="tablinks 3" onclick="openTab(event, 'Statistics', '3')" >Network Statistics</button>
+                        <button class="tablinks 3" onclick="openTab(event, 'Diff-Statistics', '3')" >Diffusion Statistics</button>
+                    </div>
+                      
+                    <div id="Context" class="tabcontent 3" style="overflow-y: auto; ">
+                        <!-- <div class="tab" style="position: sticky; top: 0; background-color: rgba(0,0,0,.03);">
+                            <button class="tablinks 7" onclick="openTab(event, 'Graph-Context', '7')" id="defaultOpen">Graph</button>
+                            <button class="tablinks 7" onclick="openTab(event, 'Selected-Node', '7')" uk-tooltip="Run statistics algorithms in the Statistics tab for more data on selected nodes.">Selected Node</button>
+                        </div>
+                        <div id="Graph-Context" class="tabcontent 7 p-2" style="padding: 5px; overflow-y: auto;"> -->
+                                <!-- <ul class="uk-list uk-list-divider" id='context-data'>
+                                    <li><span class="bold-text">Nodes: </span><span id="total-nodes"></span></li>
+                                    <li><span class="bold-text">Edges: </span><span id="total-edges"></span></li>
+                                    <li><span class="bold-text">Average Degree: </span><span id="graph-degree"></span></li>
+                                    <li><span class="bold-text">Density: </span><span id="graph-density"></span></li>
+                                    <li><button class="btn btn-danger btn-sm btn-block mt-3" id='download_network_button'>Download network</button></li>
+                                </ul>
+                                <div class="row m-1" id='context-data'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Nodes</p><p id="total-nodes" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Edges</p><p id="total-edges" class="m-0 font-head text-white"></p></div>
+                                </div>
+                                <div class="row m-1" id='context-data'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Average Degree</p><p id="graph-degree" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Graph Density</p><p id="graph-density" class="m-0 font-head text-white"></p></div>
+                                </div>  
+                                </div>
+                                <div id="Selected-Node" class="tabcontent 7 p-2" style="padding: 5px; overflow-y: auto;">
+                                    <ul class="uk-list uk-list-divider" id='sel-node-data'>
+                                    
+                                    </ul>
+                                </div> -->
+                            <button class="accordion accordian-active">Graph Overview</button>
+                            <div class="panel" style="padding: 5px; display: block;">
+                                <div class="row m-1" id='context-data-1'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Nodes</p><p id="total-nodes" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Edges</p><p id="total-edges" class="m-0 font-head text-white"></p></div>
+                                </div>
+                                <div class="row m-1" id='context-data-2'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Average Degree</p><p id="graph-degree" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Graph Density</p><p id="graph-density" class="m-0 font-head text-white"></p></div>
+                                </div>  
+                                <!-- <div class="row m-1">
+                                    <a class="btn btn-success btn-sm btn-block mt-3 mx-2 font-12 d-flex justify-content-center align-items-center" id='download_network_button'>Download network</a>
+                                </div> -->
+                            </div>
+                            <button class="accordion" id="selected-node-accordian">Selected Node</button>
+                            <div class="panel" style="padding: 5px;" id="selected-node-panel">
+                                <ul class="uk-list uk-list-divider" id='sel-node-data'>
+                                    Select a node to view its details.
+                                </ul>
+                            </div>
+                        <!-- <ul class="uk-list uk-list-divider" id='context-data'>
+                            <li><span class="bold-text">Nodes: </span><span id="total-nodes"></span></li>
+                            <li><span class="bold-text">Edges: </span><span id="total-edges"></span></li>
+                            <li><span class="bold-text">Average Degree: </span><span id="graph-degree"></span></li>
+                            <li><span class="bold-text">Density: </span><span id="graph-density"></span></li>
+                        </ul>
+                        <ul class="uk-list uk-list-divider" id='sel-node-data'>
+                            
+                        </ul> -->
+                    </div>
+                    <div id="Statistics" class="tabcontent 3" style="overflow-y: auto; ">
+                        <button class="accordion">Network Overview</button>
+                        <div class="panel collapse show" style="padding: 5px;">
+                            <div class="row m-1" id='context-data-1'>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Diameter</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-diameter" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled" id="filter-diameter-btn" onclick="getFilter('diameter')">Run</span></span></p></div>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Transitivity</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-transitivity" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('transitivity')" id="filter-transitivity-btn">Run</span></span></p></div>
+                            </div>
+                            <div class="row m-1" id='context-data-1'>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Reciprocity</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-reciprocity" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('reciprocity')" id="filter-reciprocity-btn">Run</span></span></p></div>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Average Clustering</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-average-clustering" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('average-clustering')" id="filter-average-clustering-btn">Run</span></span></p></div>
+                            </div>
+                            <div class="row m-1" id='context-data-1'>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Average Node Connectivity</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-average-node-connectivity" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('average-node-connectivity')" id="filter-average-node-connectivity-btn">Run</span></span></p></div>
+                                <div class="col text-center bg-secondary p-1 m-1 rounded"><p class="m-0 text-white font-sub">Degree Assortivity</p><p class="m-0 font-head text-white"><span class="d-flex align-items-center justify-content-center m-1"><span id="filter-degree-assortativity" class="font-head"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('degree-assortativity')" id="filter-degree-assortativity-btn">Run</span></span></p></div>
+                            </div>
+                        </div>
+                        <!-- <div class="panel" style="padding: 5px;">
+                            <ul class="list-group">
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Diameter
+                                <span class="d-flex align-items-center"><span id="filter-diameter"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled" onclick="getFilter('diameter')">Run</span></span>
+                              </li>
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Transitivity
+                                <span class="d-flex align-items-center"><span id="filter-transitivity"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('transitivity')">Run</span></span>
+                              </li>
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Reciprocity
+                                <span class="d-flex align-items-center"><span id="filter-reciprocity"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('reciprocity')">Run</span></span>
+                              </li>
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Average Clustering
+                                <span class="d-flex align-items-center"><span id="filter-average-clustering"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('average-clustering')">Run</span></span>
+                              </li>
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Average Node Connectivity
+                                <span class="d-flex align-items-center"><span id="filter-average-node-connectivity"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('average-node-connectivity')">Run</span></span>
+                              </li>
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Degree Assortivity
+                                <span class="d-flex align-items-center"><span id="filter-degree-assortativity"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('degree-assortativity')">Run</span></span>
+                              </li>
+                            </ul>
+                        </div> -->
+
+                        <button class="accordion">Node Overview</button>
+                        <div class="panel" style="padding: 5px;">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                  Page Rank
+                                  <span class="d-flex align-items-center"><span id="filter-page-rank"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('page-rank')">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Clustering
+                                    <span class="d-flex align-items-center"><span id="filter-clustering"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('clustering')">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Closeness Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-closeness-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('closeness-centrality')">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Betweenness Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-betweenness-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('betweenness-centrality')">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Current Flow Closeness Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-current-flow-closeness-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Current Flow Betweenness Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-current-flow-betweenness-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Percolation Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-percolation-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Harmonic Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-harmonic-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info" onclick="getFilter('harmonic-centrality')">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Second Order Centrality
+                                    <span class="d-flex align-items-center"><span id="filter-second-order-centrality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Trophic Levels
+                                    <span class="d-flex align-items-center"><span id="filter-trophic-levels"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Eccentricity
+                                    <span class="d-flex align-items-center"><span id="filter-eccentricity"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Closeness Vitality
+                                    <span class="d-flex align-items-center"><span id="filter-closeness-vitality"></span>&nbsp;&nbsp;<span class="btn btn-sm btn-info disabled">Run</span></span>
+                                </li>
+                              </ul>
+                        </div>
+
+                        <button class="accordion" style="display: none;">Edge Overview</button>
+                        <div class="panel" style="padding: 5px;">
+                            <div></div>
+                        </div>
+                    </div>
+                    <div id="Diff-Statistics" class="tabcontent 3" style="padding: 5px; overflow-y: auto; ">
+                        <ul class="uk-list uk-list-divider" id="diffusion-stats">
+                            <li>No data to show. Need to run diffusion</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="height: 45%; background-color:#fcfcfc">
+                <div style="height: 100%; background-color: #fcfcfc;">
+                    <div class="tab" style="background-color: rgba(0,0,0,.03);">
+                        <button class="tablinks 4" onclick="openTab(event, 'Filters', '4')" id="defaultOpen">Plots</button>
+                        <button class="tablinks 4 d-none" onclick="openTab(event, 'Clustering', '4')">Clustering</button>
+                    </div>
+                      
+                    <div id="Filters" class="tabcontent 4" style="overflow-y: auto; ">
+                        <div style="width: 100%; position: relative; height: 100%">
+                            <canvas id="degree-plot"></canvas>
+                        </div>
+                    </div>
+                    <div id="Clustering" class="tabcontent 4" style="overflow-y: auto; ">
+                        <div style="width: 100%; position: relative; height: 100%">
+
+                            <canvas id="cluster-plot"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{url_for('static', filename='js/network_graph.js')}}"></script>
+    <script>
+        var diffusionAvailable = false
+        var timelineDataGlobal = []
+
+        function openTab(evt, cityName, group) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName(`tabcontent ${group}`);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName(`tablinks ${group}`);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(cityName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.querySelectorAll("#defaultOpen").forEach((elm) => {
+            elm.click();
+        })
+
+        var acc = document.getElementsByClassName("accordion");
+        var acc_i;
+
+        for (acc_i = 0; acc_i < acc.length; acc_i++) {
+            acc[acc_i].addEventListener("click", function() {
+                /* Toggle between adding and removing the "accordian-active" class,
+                to highlight the button that controls the panel */
+                this.classList.toggle("accordian-active");
+
+                /* Toggle between hiding and showing the accordian-active panel */
+                var panel = this.nextElementSibling;
+                if (panel.style.display === "block") {
+                panel.style.display = "none";
+                } else {
+                panel.style.display = "block";
+                }
+            });
+        }
+
+        function changeOnSelect(groupNum, target) {
+            console.log(groupNum, target)
+            let diffusionGroups = document.getElementsByClassName(`diff-group ${groupNum}`);
+            let diffVal = document.getElementById(target).value;
+            console.log(diffVal)
+            //for (diff_i = 0; diff_i < diffusionGroups.length; diff_i++) {
+            //    diffusionGroups[diff_i].style.display = "none";
+            //}
+
+            // <input class="btn btn-info btn-sm btn-block" type="submit" value="Submit" />
+            document.getElementById('diff-form').innerHTML = diff_options[diffVal]
+            document.getElementById('diff-form').innerHTML += 
+            `
+                <div class="mt-1">
+                    <button class="btn btn-info btn-sm btn-block" type="submit" id="submit-diffusion-btn">Run Diffusion</button>
+                </div>
+            `
+            //document.getElementById(diffVal).style.display = "block";
+            
+        }
+        changeOnSelect('1', 'select-diffusion')
+        //document.getElementById("IC").style.display = "block";
+        function getDiffusionData(timestamp) {
+            var sliderTime = document.getElementById("slider-time");
+            sliderTime.innerHTML = timestamp;
+            document.getElementById("myBar").value = timestamp
+            let allClasses = Object.keys(timelineDataGlobal)
+            
+            console.log(allClasses)
+            let startTime = 0
+            let statuses = {}
+            for (let j = 0; j < timestamp; j++) {
+                for (let i = 0; i < allClasses.length; i++) {
+                    timelineDataGlobal[i][j].map(function(d) {
+                        statuses[d] = i
+                    })
+                } 
+            }
+            console.log(statuses)
+            let answer = {}
+            for (let i = 0; i < allClasses.length; i++) {
+                answer[i] = 0
+            }
+            
+            let statusKeys = Object.keys(statuses)
+            console.log(statusKeys)
+            for (let i = 0; i < statusKeys.length; i++) {
+                answer[statuses[statusKeys[i]]] += 1
+            }
+            //console.log(answer)
+            for (let i = 0; i < allClasses.length; i++) {
+                document.getElementById(`class_${i}_stat`).innerHTML = answer[i]
+            }
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/chart2.8.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/report.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diffusion-form.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bs-custom-file-input.min.js') }}"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.min.js"></script>
+    <script type="text/javascript" src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/canvas2image.js') }}"></script>
+    <script>
+        $(document).ready(function () {
+            bsCustomFileInput.init()
+            getBasicGraphInfo()
+            var slider = document.getElementById("myBar");
+            var sliderTime = document.getElementById("slider-time");
+            var bubble = document.getElementById('timeline-output')
+            slider.oninput = function() {
+                sliderTime.innerHTML = this.value;
+                if (diffusionAvailable) {
+                    getDiffusionData(this.value)
+                } else {
+                    slider.value = 0
+                }
+                setBubble(slider, bubble)
+            }
+            setBubble(slider, bubble)
+        })
+
+        function setBubble(range, bubble) {
+            const val = range.value;
+            const min = range.min ? range.min : 0;
+            const max = range.max ? range.max : 100;
+            const newVal = Number(((val - min) * 100) / (max - min));
+            bubble.innerHTML = val;
+
+            // Sorta magic numbers based on size of the native UI thumb
+            bubble.style.left = `calc(${((range.clientWidth)/(max-min))*val}px - ${range.clientWidth}px - 10px)`;
+            bubble.style.top = '10px'
+        }
+
+        function CreatePDFfromHTML() {
+            /*var HTML_Width = $("#report-view").width();
+            var HTML_Height = $("#report-view").height();
+            var top_left_margin = 15;
+            var PDF_Width = HTML_Width + (top_left_margin * 2);
+            var PDF_Height = (PDF_Width * 1.5) + (top_left_margin * 2);
+            var canvas_image_width = HTML_Width/1.5;
+            var canvas_image_height = HTML_Height/1.5;
+
+            var totalPDFPages = Math.ceil(HTML_Height / PDF_Height) - 1;
+
+            html2canvas($("#report-view")[0]).then(function (canvas) {
+                var imgData = canvas.toDataURL("image/jpeg", 1.0);
+                var pdf = new jsPDF('p', 'pt', [PDF_Width, PDF_Height]);
+                pdf.addImage(imgData, 'JPG', top_left_margin, top_left_margin, canvas_image_width, canvas_image_height);
+                for (var i = 1; i <= totalPDFPages; i++) { 
+                    pdf.addPage(PDF_Width, PDF_Height);
+                    pdf.addImage(imgData, 'JPG', top_left_margin, -(PDF_Height*i)+(top_left_margin*4),canvas_image_width,canvas_image_height);
+                }
+                pdf.save("Report.pdf");
+                //$(".html-content").hide();
+            });*/
+            let canvas = document.getElementById('RetweetReport')
+            var imgData = Canvas2Image.convertToPNG(canvas, canvas.clientWidth/1.2, canvas.clientHeight/1.2)
+            //console.log(imgData)
+            var printCanvas = $('#report-view').html()
+            //console.log(printCanvas)
+            let userRunStatistics = ""
+
+            var myWindow = window.open('','','width=800,height=1000');
+            myWindow.document.write(
+                "<!Doctype HTML>" +
+                "<html>" + 
+                    "<head>" + 
+                        "<title>DiVA Report</title>" +
+                        "<link rel=stylesheet href='/static/css/bootstrap.min.css'>" + 
+                    "</he" + "ad>" + 
+                    "<body>" +
+                        "<div class='container d-flex justify-content-center flex-column align-items-center py-4'>" +
+                        "<h3 class='display-3' style='color: #434343'>DiVA REPORT</h" + "3>" + 
+                        '<div class="row">' +
+                            '<div class="row col-12 text-center"><h4 class="display-4">Graph Statistics</h4></div>' +
+                            '<div class="row col-12"><div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Nodes: </h6><h5>' + document.getElementById('total-nodes').innerHTML + '</h5></div>' +
+                            '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Edges: </h6><h5>' + document.getElementById('total-edges').innerHTML + '</h5></div>' +
+                            '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Average Degree: </h6><h5>' + document.getElementById('graph-degree').innerHTML + '</h5></div>' +
+                            '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Density: </h6><h5>' + document.getElementById('graph-density').innerHTML + '</h5></div></div>' +
+                        '</div>' +
+                        "<img src=" + imgData.src + ">" +
+                        "</d" + "iv>" + 
+                        "<script src='/static/js/jquery.js'><\/scr" + "ipt>" +
+                    "</bo" + "dy>" +
+                "</ht" + "ml>" 
+            )
+            //myWindow.document.write("<script src='/static/js/jquery.js'><\/scr" + "ipt>")
+            //myWindow.document.write("<script src='/static/js/chart2.8.js'><\/scr" +  "ipt>");
+            //myWindow.document.write(`<img src=${imgData.src} >`);
+            myWindow.document.write("<script>win" + "dow.print()<\/scr" +  "ipt>")
+            myWindow.document.close()
+        }
+        document.getElementById('zoomOut').addEventListener('click', onZoomOut, false)
+        document.getElementById('zoomIn').addEventListener('click', onZoomIn, false)
+
+        function downloadData() {
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(iterations));
+            var dlAnchorElem = document.getElementById('downloadAnchorElem');
+            dlAnchorElem.setAttribute("href",     dataStr     );
+            dlAnchorElem.setAttribute("download", "iterations.json");
+            dlAnchorElem.click();
+        }
+
+    </script>
+</body>
+</html>
