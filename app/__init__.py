@@ -243,67 +243,71 @@ def runmodel():
         print(fractionInfected)
         
     # Other params
-    if model == 'PTH': #
-        thresholdFile = request.files['threshold']
-        profileFile = request.files['profile']
-        blocked = data.get('blocked')
-        adopterRate = data.get('adopter_rate')
-        modelToRun = ProfileThresholdHate(thresholdFile, profileFile, blockedFile, adopterRate, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected)
-    elif model == 'IC': #
-        # edgeThresholdFile = request.files['edgeThreshold']
-        thresholdInitial = data.get('edge_threshold')
-        modelToRun = IndependentCascades.Model(session[user_info['id']]['G'], None, thresholdInitial, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
-    elif model == 'SIR': #
-        beta = float(data.get('beta'))
-        gamma = float(data.get('gamma'))
-        modelToRun = SIR.Model(session[user_info['id']]['G'], beta, gamma, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
-    elif model == 'SIS': #
-        beta = float(data.get('beta'))
-        lambda_param = float(data.get('lambda'))
-        modelToRun = SIS.Model(session[user_info['id']]['G'], beta, lambda_param, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
-    elif model == 'SI': #
-        beta = float(data.get('beta'))
-        modelToRun = SI.Model(session[user_info['id']]['G'], beta, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
-    elif model == 'SEIR': #
-        beta = data.get('beta')
-        gamma = data.get('gamma')
-        alpha = data.get('alpha')
-        modelToRun = SEIR(beta, gamma, alpha, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'SEIS': #
-        beta = data.get('beta')
-        lambda_param = data.get('lambda')
-        alpha = data.get('alpha')
-        modelToRun = SEIS(beta, lambda_param, alpha, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'SWIR': #
-        kappa = data.get('kappa')
-        mu = data.get('mu')
-        nu = data.get('nu')
-        modelToRun = SWIR(kappa, mu, nu, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'threshold': #
-        thresholdFile = request.files['threshold']
-        modelToRun = Threshold(thresholdFile, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'gen_threshold': #
-        thresholdFile = request.files['threshold']
-        tau = data.get('tau')
-        mu = data.get('mu')
-        modelToRun = GeneralThreshold(thresholdFile,tau, mu, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'kert_threshold': #
-        thresholdFile = request.files['threshold']
-        adopter_rate = data.get('adopter_rate')
-        percentage_blocked = data.get('percentage_blocked')
-        modelToRun = KerteszThreshold(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'profile': #
-        profileFile = request.files['profile']
-        adopter_rate = data.get('adopter_rate')
-        percentage_blocked = data.get('percentage_blocked')
-        modelToRun = Profile(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
-    elif model == 'custom_algo':
-        if useUploaded == 'false':
-            custom_algo_file = request.files['custom_algo_file']
-            custom_algo_file.save('./app/algorithms/CustomAlgo.py')
-        importlib.reload(CustomAlgo)
-        modelToRun = CustomAlgo.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
-    iterations = modelToRun.run_model()
+    try:
+        if model == 'PTH': #
+            thresholdFile = request.files['threshold']
+            profileFile = request.files['profile']
+            blocked = data.get('blocked')
+            adopterRate = data.get('adopter_rate')
+            modelToRun = ProfileThresholdHate(thresholdFile, profileFile, blockedFile, adopterRate, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected)
+        elif model == 'IC': #
+            # edgeThresholdFile = request.files['edgeThreshold']
+            thresholdInitial = data.get('edge_threshold')
+            modelToRun = IndependentCascades.Model(session[user_info['id']]['G'], None, thresholdInitial, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        elif model == 'SIR': #
+            beta = float(data.get('beta'))
+            gamma = float(data.get('gamma'))
+            modelToRun = SIR.Model(session[user_info['id']]['G'], beta, gamma, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        elif model == 'SIS': #
+            beta = float(data.get('beta'))
+            lambda_param = float(data.get('lambda'))
+            modelToRun = SIS.Model(session[user_info['id']]['G'], beta, lambda_param, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        elif model == 'SI': #
+            beta = float(data.get('beta'))
+            modelToRun = SI.Model(session[user_info['id']]['G'], beta, seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        elif model == 'SEIR': #
+            beta = data.get('beta')
+            gamma = data.get('gamma')
+            alpha = data.get('alpha')
+            modelToRun = SEIR(beta, gamma, alpha, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'SEIS': #
+            beta = data.get('beta')
+            lambda_param = data.get('lambda')
+            alpha = data.get('alpha')
+            modelToRun = SEIS(beta, lambda_param, alpha, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'SWIR': #
+            kappa = data.get('kappa')
+            mu = data.get('mu')
+            nu = data.get('nu')
+            modelToRun = SWIR(kappa, mu, nu, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'threshold': #
+            thresholdFile = request.files['threshold']
+            modelToRun = Threshold(thresholdFile, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'gen_threshold': #
+            thresholdFile = request.files['threshold']
+            tau = data.get('tau')
+            mu = data.get('mu')
+            modelToRun = GeneralThreshold(thresholdFile,tau, mu, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'kert_threshold': #
+            thresholdFile = request.files['threshold']
+            adopter_rate = data.get('adopter_rate')
+            percentage_blocked = data.get('percentage_blocked')
+            modelToRun = KerteszThreshold(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'profile': #
+            profileFile = request.files['profile']
+            adopter_rate = data.get('adopter_rate')
+            percentage_blocked = data.get('percentage_blocked')
+            modelToRun = Profile(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
+        elif model == 'custom_algo':
+            if useUploaded == 'false':
+                custom_algo_file = request.files['custom_algo_file']
+                custom_algo_file.save('./app/algorithms/CustomAlgo.py')
+            importlib.reload(CustomAlgo)
+            modelToRun = CustomAlgo.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        iterations = modelToRun.run_model()
+        print(iterations)
+    except:
+        return jsonify({'success': 1, 'msg': "Some error occured, please check your settings."})
     # print(iterations)
     return jsonify({'success': 0, 'msg': model, 'iterations': outputIterations(iterations)})
 
@@ -622,7 +626,7 @@ def getNodeInformation():
         json_to_return['In Degree'] = session[user_info['id']]['G'].in_degree(data.get('id'))
     except:
         pass
-    print(json_to_return)
+    # print(json_to_return)
     return json_to_return
 
 @app.route('/api/getAllNodeInfo', methods=['GET', 'POST'])
@@ -656,6 +660,13 @@ def uploadSeedNodes():
     seedFile = request.files['seeds']
     if seedFile.filename != '':
         session[user_info['id']]['seedNodes'] = seedFile.read().decode('utf-8').split(',')
+        flag_seednodes = 0
+        relabelled_seednodes = []
+        for i in session[user_info['id']]['seedNodes']:
+            if session[user_info['id']]['relabel_dict'].get(i, False):
+                relabelled_seednodes.append(session[user_info['id']]['relabel_dict'][i])
+            else:
+                return jsonify({'success': 1, 'msg': 'Some seednodes not found. Please check the uploaded file.'})
         # We might need to shift this to label based searching instead of ID but can leave to ID for the timebeing
         return jsonify({'success': 0, 'msg': 'Seed Nodes read and sent', 'seeds': session[user_info['id']]['seedNodes']})
 

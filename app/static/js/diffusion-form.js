@@ -136,67 +136,73 @@ function sendData() {
       document.getElementById('download-iterations').classList.remove('disabled')
       console.log(response)
       document.getElementById('submit-diffusion-btn').innerHTML = 'Run Diffusion'
-      $('#toast-status').toast({delay: 3000});
-      $('#toast-status').toast('show')
-      iterations = response['iterations']
-      diffusionAvailable = true
-      color_array = {}
-      document.getElementById("myBar").max = iterations[0].length
-      document.getElementById("myBar").value = 0
-      let elem = document.getElementById('nodes_appearance')
-      let color_prev = document.getElementById('node_color').value
-      while (elem.lastElementChild) {
-          elem.removeChild(elem.lastElementChild);
+      if(response['success'] == 0){
+        $('#toast-status').toast({delay: 3000});
+        $('#toast-status').toast('show')
+        iterations = response['iterations']
+        diffusionAvailable = true
+        color_array = {}
+        document.getElementById("myBar").max = iterations[0].length
+        document.getElementById("myBar").value = 0
+        let elem = document.getElementById('nodes_appearance')
+        let color_prev = document.getElementById('node_color').value
+        while (elem.lastElementChild) {
+            elem.removeChild(elem.lastElementChild);
+        }
+        keys = Object.keys(iterations)
+        let heading = document.createElement('label');
+        heading.innerHTML = 'Diffusion Class colors';
+        heading.classList.add('uk-form-label')
+        elem.appendChild(heading);
+        elem.appendChild(document.createElement('br'))
+        diffStats = document.getElementById('diffusion-stats')
+        diffStats.innerHTML  = ''
+        // Base color field
+        let label_b = document.createElement('label')
+        label_b.htmlFor = 'node_color';
+        label_b.innerHTML = 'Base color: ';
+        let input_b = document.createElement('input');
+        input_b.name = 'node_color'
+        input_b.id = 'node_color'
+        input_b.type = 'color'
+        let space_b = document.createElement('span')
+        space_b.innerHTML = "&nbsp;&nbsp;"
+        elem.appendChild(label_b)
+        elem.appendChild(space_b)
+        elem.appendChild(input_b)
+        elem.appendChild(document.createElement('br'))
+        input_b.value = color_prev;
+        setListenerAgainBASECOLOR();
+        // 
+        keys.map(function(d){
+            let label = document.createElement('label')
+            label.htmlFor = `class_1_${d}_color`
+            label.innerHTML = `${labels[d]} node color:  `
+            let input = document.createElement('input')
+            input.name = `class_1_${d}_color`
+            input.id = `class_1_${d}_color`
+            input.type = 'color'
+            let space = document.createElement('span')
+            space.innerHTML = "&nbsp;&nbsp;"
+            elem.appendChild(label)
+            elem.appendChild(space)
+            elem.appendChild(input)
+            elem.appendChild(document.createElement('br'))
+            color_array[d] = colors[d];
+            input.value = color_array[d]
+            console.log('color = ' + color_array[d]);
+            input.addEventListener('change', function(){
+              color_array[d] = input.value
+            })
+            let statListItem = createListElement(d, d)
+            diffStats.innerHTML += statListItem
+        })
+        plotData(response)
       }
-      keys = Object.keys(iterations)
-      let heading = document.createElement('label');
-      heading.innerHTML = 'Diffusion Class colors';
-      heading.classList.add('uk-form-label')
-      elem.appendChild(heading);
-      elem.appendChild(document.createElement('br'))
-      diffStats = document.getElementById('diffusion-stats')
-      diffStats.innerHTML  = ''
-      // Base color field
-      let label_b = document.createElement('label')
-      label_b.htmlFor = 'node_color';
-      label_b.innerHTML = 'Base color: ';
-      let input_b = document.createElement('input');
-      input_b.name = 'node_color'
-      input_b.id = 'node_color'
-      input_b.type = 'color'
-      let space_b = document.createElement('span')
-      space_b.innerHTML = "&nbsp;&nbsp;"
-      elem.appendChild(label_b)
-      elem.appendChild(space_b)
-      elem.appendChild(input_b)
-      elem.appendChild(document.createElement('br'))
-      input_b.value = color_prev;
-      setListenerAgainBASECOLOR();
-      // 
-      keys.map(function(d){
-          let label = document.createElement('label')
-          label.htmlFor = `class_1_${d}_color`
-          label.innerHTML = `${labels[d]} node color:  `
-          let input = document.createElement('input')
-          input.name = `class_1_${d}_color`
-          input.id = `class_1_${d}_color`
-          input.type = 'color'
-          let space = document.createElement('span')
-          space.innerHTML = "&nbsp;&nbsp;"
-          elem.appendChild(label)
-          elem.appendChild(space)
-          elem.appendChild(input)
-          elem.appendChild(document.createElement('br'))
-          color_array[d] = colors[d];
-          input.value = color_array[d]
-          console.log('color = ' + color_array[d]);
-          input.addEventListener('change', function(){
-            color_array[d] = input.value
-          })
-          let statListItem = createListElement(d, d)
-          diffStats.innerHTML += statListItem
-      })
-      plotData(response)
+      else{
+        alert(response['msg'])
+      }
+      
     });
 
     // Define what happens in case of error
@@ -224,6 +230,9 @@ function sendSeedNodes() {
     XHR.addEventListener( "load", function(event) {
       let response = JSON.parse(event.target.responseText)
       console.log(response)
+      if(response['success'] == 1){
+        alert(response['msg'])
+      }
     } );
 
     // Define what happens in case of error
