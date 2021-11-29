@@ -100,7 +100,7 @@ diff_options_2 = {
     "custom_algo": `
         <div class="form-group mt-3 d-flex align-items-center">
             <div class="custom-file align-items-center d-flex">
-                <input type="file" class="custom-file-input"  name="custom_algo_file" id="custom_algo_file" uk-tooltip="title: Options to change and set initial infected nodes; pos: right" required>
+                <input type="file" class="custom-file-input"  name="custom_algo_file" id="custom_algo_file_2" uk-tooltip="title: Options to change and set initial infected nodes; pos: right" required>
                 <label class="custom-file-label" for="custom_algo_file">Upload file</label>
             </div>
         </div>

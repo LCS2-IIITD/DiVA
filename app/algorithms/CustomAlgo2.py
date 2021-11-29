@@ -11,7 +11,7 @@ class Model():
         seeds=None,
         fraction_infected=None,
         iterations=7,
-        dict_path="/home/sarah/DIVA_new/retina_output/dynamic/diva_data_dynamic_iteration_list_ground.json"
+        dict_path="/home/sarah/DIVA_new/retina_output/dynamic/diva_data_dynamic_iteration_list_pred.json"
     ):
         """ 
             G -> Network X graph of the created graph on the visualizer

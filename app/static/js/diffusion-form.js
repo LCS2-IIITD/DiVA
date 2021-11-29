@@ -112,11 +112,13 @@ var labels_1234 = ['Susceptible', 'Infected', 'Recovered']
 
 function sendData() {
 
+    let use_uploaded = false
     let diff_value = document.getElementById('select-diffusion').value
     let is_seed_nodes = document.getElementById('is_seed_nodes').checked
-    let use_uploaded = document.getElementById('use_uploaded')
-    if(use_uploaded === undefined){
-      use_uploaded = true
+    
+    upload_check = document.getElementById('use_uploaded')
+    if(upload_check === undefined){
+      use_uploaded = upload_check.checked
     }
     let percent_infected = document.getElementById('percent_infected').value
     console.log(percent_infected)
@@ -378,6 +380,13 @@ function startCompare() {
     const form2 = document.getElementById( "diff-form-2" );
     const formData1 = new FormData(form1)
     const formData2 = new FormData(form2)
+    if (diff_value_1 == 'custom_algo') {
+      FD.append('custom_algo_file', document.getElementById('custom_algo_file').files[0], 'algo1.py')
+    }
+    if (diff_value_2 == 'custom_algo') {
+      FD.append('custom_algo_file_2', document.getElementById('custom_algo_file_2').files[0], 'algo2.py')
+    }
+    console.log(formData1)
     let params1 = {}
     for (var pair of formData1.entries()) {
         params1[pair[0]] = pair[1] 

@@ -12,9 +12,9 @@ class Model():
         self.model = ep.SIModel(G)
         self.iterations = iterations
         if seeds is not None and len(seeds)!=0:
-            for i in range(len(seeds)):
-                seedNodes[i] = app.models.Node.query.filter_by(label = seedNodes[i]).first().id
-            self.config.add_model_initial_configuration("Infected", seedNodes)
+            # for i in range(len(seeds)):
+            #     seedNodes[i] = app.models.Node.query.filter_by(label = seedNodes[i]).first().id
+            self.config.add_model_initial_configuration("Infected", seeds)
         else:
             try:
                 fraction_infected = float(fraction_infected)

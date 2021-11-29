@@ -665,9 +665,12 @@
             //for (diff_i = 0; diff_i < diffusionGroups.length; diff_i++) {
             //    diffusionGroups[diff_i].style.display = "none";
             //}
-            document.getElementById(`diff-form-${groupNum}`).innerHTML = diff_options_2[diffVal]
+            if (groupNum == 2) {
+                document.getElementById(`diff-form-${groupNum}`).innerHTML = diff_options_2[diffVal]    
+            } else {
+                document.getElementById(`diff-form-${groupNum}`).innerHTML = diff_options[diffVal]
+            }
             //document.getElementById(diffVal).style.display = "block";
-            
         }
         changeOnSelect('1', 'select-diffusion-1')
         changeOnSelect('2', 'select-diffusion-2')

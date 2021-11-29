@@ -23,7 +23,7 @@ import csv
 from random import randint
 
 from app import google_auth
-from app.algorithms import IndependentCascades, SIR, SIS, SI, CustomAlgo #, SEIR, SEIS, SWIR, Threshold, GeneralThreshold, KerteszThreshold, Profile
+from app.algorithms import IndependentCascades, SIR, SIS, SI, CustomAlgo, CustomAlgo2, CustomAlgo3 #, SEIR, SEIS, SWIR, Threshold, GeneralThreshold, KerteszThreshold, Profile
 
 DATABASE = '/session/database.db'
 
@@ -306,7 +306,8 @@ def runmodel():
             modelToRun = CustomAlgo.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
         iterations = modelToRun.run_model()
         print(iterations)
-    except:
+    except Exception as e:
+        print(str(e))
         return jsonify({'success': 1, 'msg': "Some error occured, please check your settings."})
     # print(iterations)
     return jsonify({'success': 0, 'msg': model, 'iterations': outputIterations(iterations)})
@@ -333,7 +334,7 @@ def comparemodel():
     data = json.loads(formData.get('params1'))
     model = formData.get('model_1')
     # print(data)
-    # print(request.files)
+    print("Files", request.files)
     # Other params
     if model == 'PTH': #
         thresholdFile = request.files['threshold']
@@ -390,11 +391,14 @@ def comparemodel():
         percentage_blocked = data.get('percentage_blocked')
         modelToRun = Profile(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
     elif model == 'custom_algo':
+        print('ME WERE HERE!')
+        # print("Files type", request)
         custom_algo_file = request.files['custom_algo_file']
-        custom_algo_file.save('./app/algorithms/CustomAlgo.py')
-        importlib.reload(CustomAlgo)
-        modelToRun = CustomAlgo.Model(G, seeds = seedNodes, fraction_infected = fractionInfected, iterations = maxIterations)
+        custom_algo_file.save('./app/algorithms/CustomAlgo3.py')
+        importlib.reload(CustomAlgo3)
+        modelToRun = CustomAlgo3.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
         # modelToRun = SI.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+    print(modelToRun)
     if model != "ground":
         iterations1 = modelToRun.run_model()
     else:
@@ -458,10 +462,10 @@ def comparemodel():
         percentage_blocked = data.get('percentage_blocked')
         modelToRun = Profile(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
     elif model == 'custom_algo':
-        custom_algo_file = request.files['custom_algo_file']
-        custom_algo_file.save('./app/algorithms/CustomAlgo.py')
-        importlib.reload(CustomAlgo)
-        modelToRun = CustomAlgo.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        custom_algo_file = request.files['custom_algo_file_2']
+        custom_algo_file.save('./app/algorithms/CustomAlgo2.py')
+        importlib.reload(CustomAlgo2)
+        modelToRun = CustomAlgo2.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
     if model != "ground":
         iterations2 = modelToRun.run_model()
     else:
