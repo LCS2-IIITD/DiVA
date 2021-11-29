@@ -390,11 +390,11 @@ def comparemodel():
         percentage_blocked = data.get('percentage_blocked')
         modelToRun = Profile(thresholdFile, adopter_rate, percentage_blocked, seeds = seedFile, fraction_infected = fractionInfected)
     elif model == 'custom_algo':
-        # custom_algo_file = request.files['custom_algo_file']
-        # custom_algo_file.save('./app/algorithms/CustomAlgo.py')
-        # importlib.reload(CustomAlgo)
-        # modelToRun = CustomAlgo.Model(G, seeds = seedNodes, fraction_infected = fractionInfected, iterations = maxIterations)
-        modelToRun = SI.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
+        custom_algo_file = request.files['custom_algo_file']
+        custom_algo_file.save('./app/algorithms/CustomAlgo.py')
+        importlib.reload(CustomAlgo)
+        modelToRun = CustomAlgo.Model(G, seeds = seedNodes, fraction_infected = fractionInfected, iterations = maxIterations)
+        # modelToRun = SI.Model(session[user_info['id']]['G'], seeds = session[user_info['id']]['seedNodes'], fraction_infected = fractionInfected, iterations = maxIterations)
     if model != "ground":
         iterations1 = modelToRun.run_model()
     else:
