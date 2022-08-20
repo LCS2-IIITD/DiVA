@@ -65,11 +65,9 @@ def no_cache(view):
 @app.route('/google/login')
 @no_cache
 def login():
-    print("HERE!")
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
                             scope=AUTHORIZATION_SCOPE,
                             redirect_uri=AUTH_REDIRECT_URI)
-    print("HERE2!")
     uri, state = session.create_authorization_url(AUTHORIZATION_URL)
     # print(uri, state)
     flask.session[AUTH_STATE_KEY] = state

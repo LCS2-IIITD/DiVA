@@ -63,6 +63,7 @@ db.create_all()
 def index():
     if google_auth.is_logged_in():
         user_info = google_auth.get_user_info()
+        print(user_info)
         session[user_info['id']] = {}
         session[user_info['id']]['G'] = None
         session[user_info['id']]['seedNodes'] = []
