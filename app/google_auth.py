@@ -26,6 +26,7 @@ AUTH_STATE_KEY = 'auth_state'
 app = flask.Blueprint('google_auth', __name__)
 
 def is_logged_in():
+    print("Is Logged in", AUTH_TOKEN_KEY in flask.session)
     return True if AUTH_TOKEN_KEY in flask.session else False
 
 def build_credentials():
@@ -64,23 +65,25 @@ def no_cache(view):
 @app.route('/google/login')
 @no_cache
 def login():
+    print("HERE!")
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
                             scope=AUTHORIZATION_SCOPE,
                             redirect_uri=AUTH_REDIRECT_URI)
-  
+    print("HERE2!")
     uri, state = session.create_authorization_url(AUTHORIZATION_URL)
-
+    # print(uri, state)
     flask.session[AUTH_STATE_KEY] = state
     flask.session.permanent = True
-
+    # print(flask.session)
     return flask.redirect(uri, code=302)
 
 @app.route('/google/auth')
 @no_cache
 def google_auth_redirect():
+    # print(flask.session)
     req_state = flask.request.args.get('state', default=None, type=None)
-
-    if req_state != flask.session[AUTH_STATE_KEY]:
+    # print(req_state, flask.session.get(AUTH_STATE_KEY, None))
+    if req_state != flask.session.get(AUTH_STATE_KEY, None):
         response = flask.make_response('Invalid state parameter', 401)
         return response
     
