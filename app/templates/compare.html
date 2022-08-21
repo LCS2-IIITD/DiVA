@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare View - DiVA</title>
+
+    <!-- UI KIT IMPORT -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/uikit.min.css') }}" />
+    <script src="{{ url_for('static', filename='js/uikit.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/uikit-icons.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chroma.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/models-states.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diff_options.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3fc.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/three.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3-force-boundary.min.js') }}"></script>
+    <script>
+        var filename = '{{ filename }}';
+        var positioned = '{{ positioned }}';
+        var data = '{{ positioned_data | safe }}';
+        var data_single;
+        if(positioned === 'true'){
+            data = JSON.parse(data);
+            data_single = data;
+            positioned = true
+        }
+        else{
+            positioned = false
+            data = {}
+            data.nodes = []
+            data.links = []
+            data_single = {}
+            data_single.nodes = []
+            data_single.links = []
+        }
+    </script>
+    <script src="{{url_for('static', filename='js/network_graph_compare.js')}}" type='module'></script>
+    <script src="{{url_for('static', filename='js/network_graph_compare_split.js')}}" type='module'></script>
+    <!-- <script src="{{url_for('static', filename='js/network_graph_compare copy 2.js')}}" type='module'></script> -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <style>
+        /*
+            LAYOUT CSS
+        */
+        * {
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif !important;
+            font-size: 12px !important;
+        }
+        
+        html, body {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .flex-container-main {
+        /* We first create a flex layout context */
+            display: flex;
+            
+            /* Then we define the flow direction 
+                and if we allow the items to wrap 
+            * Remember this is the same as:
+            * flex-direction: row;
+            * flex-wrap: wrap;
+            */
+            flex-flow: nowrap;
+            
+            /* Then we define how is distributed the remaining space */
+            justify-content: space-around;
+            
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            height: 100%;
+        }
+
+        .flex-item-100 {
+            height: 100%;
+        }
+
+        .footer {
+            height: 40px;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+            background-color: #ccc;
+        }
+
+        .graph-container {
+            /*min-height: calc(100vh - 40px);*/
+            height: 100%;
+        }
+
+        .vertical-horizontal-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #myProgress {
+            width: 60%;
+            background-color: #fcfcfc;
+            border-radius: 10px;
+        }
+
+        #myBar {
+            width: 37%;
+            height: 15px;
+            background-color: #57a18b;
+            border-radius: 10px;
+        }
+
+        .tab {
+            height: 25px;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+            background-color: rgba(0,0,0,.03);
+            white-space: nowrap;
+            display: flex;
+            flex-wrap: nowrap;
+            z-index: 1000;
+        }
+
+        /* Style the buttons inside the tab */
+        .tab button {
+            background-color: inherit;
+            display: inline-block;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 5px 5px;
+            transition: 0.3s;
+            font-size: 18px;   
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            border-top: none;
+            overflow: hidden;
+            z-index: 1;
+            height: calc(100% - 25px);
+        }
+
+        .font-head {
+            font-size: 14px !important;
+        }
+
+        .font-sub {
+            font-size: 11px !important;
+        }
+
+        .font-12 {
+            font-size: 12px !important;
+        }
+
+        ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+        }
+        
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+        background: #888; 
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+        }
+
+        .bold-text {
+            font-weight: 900;
+        }
+
+        /* Style the buttons that are used to open and close the accordion panel */
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: 0.4s;
+        }
+
+        /* Add a background color to the button if it is clicked on (add the .accordian-active class with JS), and when you move the mouse over it (hover) */
+        .accordion:hover {
+            background-color: #ccc;
+        }
+
+        .accordian-active {
+            background-color: #ccc;
+        }
+
+        /* Style the accordion panel. Note: hidden by default */
+        .panel {
+            background-color: white;
+            display: none;
+            overflow: hidden;
+        }
+
+        .accordion:after {
+            content: '\02795'; /* Unicode character for "plus" sign (+) */
+            font-size: 13px;
+            color: #777;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .accordian-active:after {
+            content: "\2796"; /* Unicode character for "minus" sign (-) */
+        }
+
+        .diff-group {
+            display: none;
+        }
+
+        .main-holder {
+            height: calc(100% - 65px);
+        }
+
+        .rightSideButton {
+            width: 400px;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            right: -300px;
+            background-color: #fff;
+            z-index: 6969;
+            opacity: 0.9;
+        }
+
+        .rightSideButton::before {
+            height: 100px;
+            width: 40px;
+            background-color: #f00;
+            top: 50%;
+        } 
+
+    </style>
+</head>
+<body>
+    <nav class="bg-dark navbar-dark d-flex align-items-center p-2" style="height: 40px;">
+        <a class="navbar-brand font-head" href="#">DiVA</a>   
+        <ul class="ml-auto nav m-0 p-0 align-items-center" style="flex-direction: row;">
+            <!-- PROFILE DROPDOWN - scrolling off the page to the right -->
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle text-white" id="navDropDownLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Downloads
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navDropDownLink">
+                    <!-- <a class="dropdown-item" href='/google/logout'>Logout</a> -->
+                    <a href="#" class="dropdown-item" onclick="CreatePDFfromHTML()" aria-expanded="false">
+                        Download Report
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle text-white" id="navDropDownLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img src="{{ pic_link }}" height="25px" width="25px" style="border-radius: 15px;" />
+                    &nbsp;&nbsp;{{ name }}
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navDropDownLink">
+                    <a class="dropdown-item" href='/google/logout'>Logout</a>
+                </div>
+            </li>
+        </ul>
+    </nav>  
+    <div class="uk-grid-collapse" uk-grid style="height: calc(100% - 40px);">
+        <!--<div class="rightSideButton">
+
+        </div>-->
+        <div class="uk-width-1-5" style="height: 100%;">
+            <div style="height: 60%; background-color: #fcfcfc; border: 1px solid rgba(0,0,0,.125)">
+                <div style="height: 100%; overflow-y: auto; background-color: #fcfcfc;">
+                    <div class="tab" style="top: 0; background-color: rgba(0,0,0,.03);">
+                        
+                        <!-- <button class="tablinks 1" onclick="openTab(event, 'Layout', '1')" uk-tooltip="Change the layout of the displayed graph">Layout</button> -->
+                        <button class="tablinks 1" onclick="openTab(event, 'Diffusion', '1')" uk-tooltip="Select the algorithm you want to visualize the diffusion on" id="defaultOpen">Diffusion</button>
+                        <button class="tablinks 1" onclick="openTab(event, 'Diffusion-Stats', '1')" uk-tooltip="Select the algorithm you want to visualize the diffusion on">Diffusion Statistics</button>
+                        <button class="tablinks 1" onclick="openTab(event, 'Appearance', '1')" uk-tooltip="Options to change and set the appearance of the graph">Appearance</button>
+                    </div>
+                      
+                    <div id="Appearance" class="tabcontent 1" >
+                        <!-- <div class="tab" style="top: 0; background-color: rgba(0,0,0,.03);">
+                            <button class="tablinks 2" onclick="openTab(event, 'Nodes', '2')" id="defaultOpen">Nodes</button>
+                            <button class="tablinks 2" onclick="openTab(event, 'Edges', '2')">Edges</button>
+                        </div>
+                        <div id="Nodes" class="tabcontent 2 p-2" style="padding: 5px; overflow-y: auto">
+                            <form id="nodes_appearance_compare">
+                                <label>Run diffusion algorithm to get appearance options...</label>
+                            </form>
+                        </div>
+                        <div id="Edges" class="tabcontent 2 p-2" style="padding: 5px;">
+                            <form>
+                                <label for="edge_color_compare">Set edge color:</label>
+                                <input type="color" id="edge_color_compare" name="edge_color_compare" value="#cfcfcf"><br><br>
+                            </form>
+                        </div> -->
+                        <button class="accordion">Node Appearance</button>
+                        <div id="Nodes" class="panel" style="padding: 5px; overflow-y: auto">
+                            <form id="nodes_appearance_compare">
+                                <label>Run diffusion algorithm to get appearance options...</label>
+                            </form>
+                        </div>
+                        <button class="accordion">Edge Appearance</button>
+                        <div id="Edges" class="panel" style="padding: 5px; overflow-y: auto">
+                            <form>
+                                <label for="edge_color_compare">Set edge color:</label>
+                                <input type="color" id="edge_color_compare" name="edge_color_compare" value="#cfcfcf"><br><br>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div id="Layout" class="tabcontent 1" style="padding: 5px; overflow-y: auto;">
+                        <div class="uk-margin p-2">
+                            <label class="uk-form-label" for="form-stacked-select">Select layout of graph:</label>
+                            <div class="uk-form-controls">
+                                <select class="uk-select" id="form-stacked-select">
+                                    <option>Force Directed</option>
+                                    <option>Breadth First</option>
+                                    <option>Circular</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="Diffusion" class="tabcontent 1" style="padding: 5px; overflow-y: auto">
+                        <div class="mt-2 p-2">
+                            <label class="uk-form-label" for="form-stacked-select">Select Diffusion Algorithm 1:</label>
+                            <div class="uk-form-controls">
+                                <select class="uk-select" id="select-diffusion-1" onchange="changeOnSelect('1', 'select-diffusion-1')">
+                                    <option value="custom_algo">Upload your own</option>
+                                    <option value="IC">Independent Cascade</option>
+                                    <option value="SI">SI</option>
+                                    <option value="SIR">SIR</option>
+                                    <option value="SIS">SIS</option>
+                                    <option value="SEIS" disabled>SEIS</option>
+                                    <option value="SEIR" disabled>SEIR</option>
+                                    <option value="PTH" disabled>Profile Threshold</option>
+                                    <option value="threshold" disabled>Threshold</option>
+                                    <option value="gen_threshold" disabled>General Threshold</option>
+                                    <option value="kert_threshold" disabled>Kertesz Threshold</option>
+                                    <option value="profile" disabled>Profile</option>
+                                </select>
+                            </div>
+                            <div class="diffusion-config">
+                                <form id="diff-form-1" class="diff-form-1"> 
+                                </form>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="p-2">
+                            <label class="uk-form-label" for="form-stacked-select">Select Diffusion Algorithm 2:</label>
+                            <div class="uk-form-controls">
+                                <select class="uk-select" id="select-diffusion-2" onchange="changeOnSelect('2', 'select-diffusion-2')">
+                                    <option value="custom_algo">Upload your own</option>
+                                    <option value="IC">Independent Cascade</option>
+                                    <option value="SI">SI</option>
+                                    <option value="SIR">SIR</option>
+                                    <option value="SIS">SIS</option>
+                                    <option value="SEIS" disabled>SEIS</option>
+                                    <option value="SEIR" disabled>SEIR</option>
+                                    <option value="PTH" disabled>Profile Threshold</option>
+                                    <option value="threshold" disabled>Threshold</option>
+                                    <option value="gen_threshold" disabled>General Threshold</option>
+                                    <option value="kert_threshold" disabled>Kertesz Threshold</option>
+                                    <option value="profile" disabled>Profile</option>
+                                </select>
+                            </div>
+                            <div class="diffusion-config">
+                                <form id="diff-form-2" class="diff-form-2"> 
+                                </form>
+                            </div>
+                        </div>
+                        <div class="form-group row mt-3 d-flex align-items-center">
+                            <label for="inputEmail3" class="col-sm-5 col-form-label">Max Iterations</label>
+                            <div class="col-sm-7">
+                                <input type="number" class="form-control" min="50" value="100" max="300" id="iterations" placeholder="Iterations" name="iterations">
+                            </div>
+                        </div>
+                        <div class="mt-1">
+                            <button type="button" class="btn btn-info btn-sm btn-block" onclick="startCompare()">Run Comparison</button>
+                            <button class="btn btn-success btn-sm btn-block mt-3" id='reset-button'>Reset iterations</button>
+                                <a id="downloadAnchorElem" style="display:none"></a>
+                                <a class="btn btn-info btn-sm btn-block mt-3 disabled" onclick="downloadData()" href="#" id="download-iterations">Download Iterations</a>
+                            <!-- <button class="btn btn-danger btn-sm btn-block mt-3" onclick="CreatePDFfromHTML()">Download Report</button> -->
+                        </div>
+                    </div>
+                    <div id="Diffusion-Stats" class="tabcontent 1" style="padding: 5px; overflow-y: auto;">
+                        <div class="uk-margin p-2">
+                            <ul class="uk-list uk-list-divider" id="diffusion-stats">
+                                <li>No data to show</li>
+                            </ul>
+                            <div id="confusion-matrix">
+                                <h3 style="width: 100%">Confusion Matrix: <span class="float-right" uk-icon="question" uk-tooltip="Second algorithm is considered the actual truth"></span></h3>
+                                <!-- <ul class="uk-list uk-list-divider" id="diffusion-stats">
+                                    <li><span class="bold-text">True Positive: </span><span id="tp_stat"></span></li>
+                                    <li><span class="bold-text">False Positive: </span><span id="fp_stat"></span></li>
+                                    <li><span class="bold-text">False Negative: </span><span id="fn_stat"></span></li>
+                                    <li><span class="bold-text">Precision: </span><span id="precision_stat"></span></li>
+                                    <li><span class="bold-text">Recall: </span><span id="recall_stat"></span></li>
+                                    <li><span class="bold-text">F1 Score: </span><span id="f1_stat"></span></li>
+                                </ul> -->
+                                <div class="row m-1" id='cf-data-1'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">True Positive</p><p id="tp_stat" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">False Positive</p><p id="fp_stat" class="m-0 font-head text-white"></p></div>
+                                </div>
+                                <div class="row m-1">
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">False Negative</p><p id="fn_stat" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">True Negative</p><p id="tn_stat" class="m-0 font-head text-white"></p></div>
+                                </div>
+                                <h3 style="width: 100%">Metrics: <span class="float-right" uk-icon="question" uk-tooltip="Metrics calculated using confusion matrix"></span></h3>
+                                <div class="row m-1" id='cf-data-2'>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Precision</p><p id="precision_stat" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Recall</p><p id="recall_stat" class="m-0 font-head text-white"></p></div>
+                                    <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">F1 Score</p><p id="f1_stat" class="m-0 font-head text-white"></p></div>
+                                </div>  
+                                <!-- <canvas id="plotF1Report_1" style="position: relative; height:40vh; width:50vw"></canvas> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 40%; max-height: 50%; border: 1px solid rgba(0,0,0,.125)">
+                <div style="height: 100%; background-color: #fcfcfc;">      
+                    <div class="tab" style="background-color: rgba(0,0,0,.03);">
+                        <button class="tablinks 5" onclick="openTab(event, 'initial-config', '5')" id="defaultOpen" uk-tooltip="Options to change and set initial infected nodes">Initial Configuration</button>
+                        <button class="tablinks 5" onclick="openTab(event, 'Filters', '5')" >Filters</button>
+                        <button class="tablinks 5" onclick="openTab(event, 'Context', '5')">Context</button>
+                    </div>
+                    <div id="initial-config" class="tabcontent 5 p-2" style="padding: 5px; overflow-y: auto; ">
+                        <form id="seed-form" class="seed-form uk-form-stacked" enctype="multipart/form-data"> 
+                            <label for="seedNodes" class="col-form-label" style="width: 100%;">Initial infected nodes<span class="float-right" uk-icon="question" uk-tooltip="Upload initial infected nodes as csv"></span></label>
+                            <div class="custom-file">
+                              <input type="file" class="custom-file-input" id="seedFile" name="seeds" required>
+                              <label class="custom-file-label" for="customFile">Upload file</label>
+                            </div>
+                            <button class="btn btn-info btn-sm btn-block mt-1" type="button" onclick="sendSeedNodes()">
+                                Upload
+                            </button>
+                        </form>
+                        <div class="form-check mt-2">
+                          <input class="form-check-input" type="checkbox" name="is_seed_nodes" value="" id="is_seed_nodes">
+                          <label class="form-check-label" for="defaultCheck1">
+                            Use uploaded nodes
+                          </label>
+                        </div>
+                        <hr>
+                        <label for="seedNodes" class="col-form-label" style="width: 100%;">Fraction Infected Nodes<span class="float-right" uk-icon="question" uk-tooltip="Set fraction of initial infected nodes"></span></label>
+                        <input type="number" class="form-control" min="0" value="0.1" step="0.01" max="1" id="percent_infected" placeholder="beta" name="fraction_infected">
+                    </div>
+                    <div id="Filters" class="tabcontent 5" style="overflow-y: auto; ">
+                        <div style="width: 100%; position: relative; height: 100%">
+                            <canvas id="plotF1Report_2"></canvas>
+                        </div>
+                        <div style="display:none">
+                            <canvas id="degree-plot"></canvas>
+                        </div>
+                        <!-- <canvas id="degree-plot" style="display: none"></canvas> -->
+                        
+                    </div>
+                    <div id="Context" class="tabcontent 5" style="padding: 5px; overflow-y: auto; ">
+                        <div class="panel" style="padding: 5px; display: block;">
+                            <div class="row mx-1 my-0">
+                                <h3 class="font-head">Graph Context</h3>
+                            </div>
+                            <div class="row m-1" id='context-data-1'>
+                                <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Nodes</p><p id="total-nodes" class="m-0 font-head text-white"></p></div>
+                                <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub"># Edges</p><p id="total-edges" class="m-0 font-head text-white"></p></div>
+                            </div>
+                            <div class="row m-1" id='context-data-2'>
+                                <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Average Degree</p><p id="graph-degree" class="m-0 font-head text-white"></p></div>
+                                <div class="col text-center bg-info p-1 m-1 rounded"><p class="m-0 text-white font-sub">Graph Density</p><p id="graph-density" class="m-0 font-head text-white"></p></div>
+                            </div>  
+                            <!-- <div class="row m-1">
+                                <a class="btn btn-success btn-sm btn-block mt-3 mx-2 font-12 d-flex justify-content-center align-items-center" id='download_network_button'>Download network</a>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="uk-width-4-5" style="height: calc(100%);" >
+            <div class="tab" style="top: 0; background-color: rgba(0,0,0,.03);">
+                <button class="tablinks 6" onclick="openTab(event, 'graph-view-split', '6')" id="defaultOpen" uk-tooltip="Options to compare network on different models">Split View</button>
+                <button class="tablinks 6" onclick="openTab(event, 'graph-view-single', '6')"  uk-tooltip="Options to compare network on different models">Combined View</button>
+                <button class="tablinks 6" onclick="openTab(event, 'report-view', '6')" uk-tooltip="Options to view report">Report View</button>
+            </div>  
+            <div id="graph-view-single" class="tabcontent columns 6 main-holder" style="width: 100%;">
+                <div class="d-flex flex-row" style="height: 100%; width: 100%;">
+                    <div class="column is-12" id="graph-view-inner-single" style="display: block; width: calc(100% - 30px)">
+                    </div>
+                    <div class="sideGraphToolbar d-flex flex-column justify-content-end align-items-center" style="height: 100%; width: 30px; background-color: rgba(0,0,0,.03); border-left: 1px solid rgba(0,0,0,.125);">
+                            
+                        <div class="btn-group-vertical btn-group-toggle" data-toggle="buttons">
+                            <label class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-out.svg') }}">
+                            </label>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-in.svg') }}">
+                            </div>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/fullscreen-exit.svg') }}">
+                            </div>
+                            <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/arrows-move.svg') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="graph-view-split" class="tabcontent rows 6 main-holder" style="width: 100%;">
+                <div class="d-flex flex-row" style="height: 100%; width: 100%;">
+                    <div class="col d-flex flex-row" style="border-right: 0px #444 solid; padding: 0 !important;">
+                        <div style="height: 100%;" style="display: block; width: calc(100% - 30px)" id="graph-view-inner-1">
+                        </div> 
+                        <div class="sideGraphToolbar d-flex flex-column justify-content-end align-items-center" style="height: 100%; width: 30px; background-color: rgba(0,0,0,.03); border-left: 1px solid rgba(0,0,0,.125);">
+                            <div class="btn-group-vertical btn-group-toggle" data-toggle="buttons">
+                                <label class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-out.svg') }}">
+                                </label>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-in.svg') }}">
+                                </div>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/fullscreen-exit.svg') }}">
+                                </div>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/arrows-move.svg') }}">
+                                </div>
+                              </div>
+                        </div>
+                    </div>
+                    <div class="col d-flex flex-row" style="border-left: 0px #444 solid; padding: 0 !important;">
+                        <div style="height: 100%;" style="display: block; width: calc(100% - 30px)" id="graph-view-inner-2">
+                        </div> 
+                        <div class="sideGraphToolbar d-flex flex-column justify-content-end align-items-center" style="height: 100%; width: 30px; background-color: rgba(0,0,0,.03); border-left: 1px solid rgba(0,0,0,.125);">
+                            
+                            <div class="btn-group-vertical btn-group-toggle" data-toggle="buttons">
+                                <label class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-out.svg') }}">
+                                </label>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/zoom-in.svg') }}">
+                                </div>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/fullscreen-exit.svg') }}">
+                                </div>
+                                <div class="p-1 my-1 btn btn-light d-flex justify-content-center align-items-center" style="width: 25px; height: 25px; border-radius: 5px; border: 1px solid rgba(0,0,0,.25)">
+                                    <input type="radio" name="options" id="option1"> <img src="{{ url_for('static', filename='images/arrows-move.svg') }}">
+                                </div>
+                              </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <div id="report-view" class="tabcontent 6 main-holder" style="padding: 5px; overflow-y: auto">
+                <div class="graph-container d-flex align-items-center flex-column">
+                    <div id="RetweetReport1-holder" style="position: relative; height:40vh; width:50vw">
+                        <canvas id="RetweetReport1"></canvas>
+                    </div>
+                    <div id="RetweetReport2-holder" style="position: relative; height:40vh; width:50vw">
+                        <canvas id="RetweetReport2"></canvas>
+                    </div>
+                    <div id="CompareInfectionReport-holder" style="position: relative; height:40vh; width:50vw">
+                        <canvas id="CompareInfectionReport"></canvas>
+                    </div>
+                    <div id="plotF1Report-holder" style="position: relative; height:40vh; width:50vw">
+                        <canvas id="plotF1Report"></canvas>
+                    </div>
+                    <div id="plotCommonNodes-holder" style="position: relative; height:40vh; width:50vw">
+                        <canvas id="plotCommonNodes"></canvas>
+                    </div>
+                        <!-- <canvas id="RetweetReport1" style="position: relative; height:40vh; width:50vw"></canvas>
+                        <canvas id="RetweetReport2" style="position: relative; height:40vh; width:50vw"></canvas>
+                        <canvas id="CompareInfectionReport" style="position: relative; height:40vh; width:50vw"></canvas>
+                        <canvas id="plotF1Report" style="position: relative; height:40vh; width:50vw"></canvas>
+                        <canvas id="plotCommonNodes" style="position: relative; height:40vh; width:50vw"></canvas> -->
+                </div>
+            </div>
+            
+            
+            <div class="footer uk-flex uk-flex-middle uk-flex-center" style='height: 40px !important'>
+                <button class="uk-icon-button" uk-icon="play" style="height: 25px; width: 25px;" id='start-diffusion'></button>
+                &nbsp;&nbsp;
+                <a href="" class="uk-icon-button" uk-icon="chevron-double-right" style="height: 25px; width: 25px;"></a>
+                &nbsp;&nbsp;
+                <input type="range" min="0" max="99" value="0" class="slider" id="myBar">      
+                &nbsp;&nbsp;
+                Timestamp: &nbsp;<span id="slider-time">0</span>             
+            </div>
+        </div>
+    </div>
+    <script>
+        var diffusionAvailable = false
+        var timelineDataGlobal1 = []
+        var timelineDataGlobal2 = []
+        var F1Array = []
+        function openTab(evt, cityName, group) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName(`tabcontent ${group}`);
+            // console.log(tabcontent)
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName(`tablinks ${group}`);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(cityName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.querySelectorAll("#defaultOpen").forEach((elm) => {
+            elm.click();
+        })
+
+        var acc = document.getElementsByClassName("accordion");
+        var acc_i;
+
+        for (acc_i = 0; acc_i < acc.length; acc_i++) {
+            acc[acc_i].addEventListener("click", function() {
+                /* Toggle between adding and removing the "accordian-active" class,
+                to highlight the button that controls the panel */
+                this.classList.toggle("accordian-active");
+
+                /* Toggle between hiding and showing the accordian-active panel */
+                var panel = this.nextElementSibling;
+                if (panel.style.display === "block") {
+                panel.style.display = "none";
+                } else {
+                panel.style.display = "block";
+                }
+            });
+        }
+
+        function changeOnSelect(groupNum, target) {
+            console.log(groupNum, target)
+            let diffusionGroups = document.getElementsByClassName(`diff-group ${groupNum}`);
+            let diffVal = document.getElementById(target).value;
+            console.log(diffVal)
+            //for (diff_i = 0; diff_i < diffusionGroups.length; diff_i++) {
+            //    diffusionGroups[diff_i].style.display = "none";
+            //}
+            if (groupNum == 2) {
+                document.getElementById(`diff-form-${groupNum}`).innerHTML = diff_options_2[diffVal]    
+            } else {
+                document.getElementById(`diff-form-${groupNum}`).innerHTML = diff_options[diffVal]
+            }
+            //document.getElementById(diffVal).style.display = "block";
+        }
+        changeOnSelect('1', 'select-diffusion-1')
+        changeOnSelect('2', 'select-diffusion-2')
+        //document.getElementById("IC").style.display = "block";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <script src="{{ url_for('static', filename='js/setfunctions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/report.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diffusion-form.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/bs-custom-file-input.min.js') }}"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.min.js"></script>
+    <script type="text/javascript" src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
+    <script src="{{ url_for('static', filename='js/canvas2image.js') }}"></script>
+    <script>
+        function getDiffusionData(timestamp) {
+            var sliderTime = document.getElementById("slider-time");
+            sliderTime.innerHTML = timestamp;
+            document.getElementById("myBar").value = timestamp
+            let allClasses1 = Object.keys(timelineDataGlobal1)
+            //console.log(allClasses)
+            let startTime = 0
+            let statuses1 = {}
+            for (let j = 0; j < timestamp; j++) {
+                for (let i = 0; i < allClasses1.length; i++) {
+                    timelineDataGlobal1[i][j].map(function(d) {
+                        statuses1[d] = i
+                    })
+                } 
+            }
+            //console.log(statuses1)
+            let answer1 = {}
+            for (let i = 0; i < allClasses1.length; i++) {
+                answer1[i] = 0
+            }
+            
+            let statusKeys1 = Object.keys(statuses1)
+            //console.log(statusKeys1)
+            for (let i = 0; i < statusKeys1.length; i++) {
+                answer1[statuses1[statusKeys1[i]]] += 1
+            }
+            //console.log(answer1)
+            for (let i = 0; i < allClasses1.length; i++) {
+                document.getElementById(`class_${i}_stat_1`).innerHTML = answer1[i]
+            }
+
+            let allClasses2 = Object.keys(timelineDataGlobal2)
+            //console.log(allClasses2)
+            let statuses2 = {}
+            for (let j = 0; j < timestamp; j++) {
+                for (let i = 0; i < allClasses2.length; i++) {
+                    timelineDataGlobal2[i][j].map(function(d) {
+                        statuses2[d] = i
+                    })
+                } 
+            }
+            //console.log(statuses2)
+            let answer2 = {}
+            for (let i = 0; i < allClasses2.length; i++) {
+                answer2[i] = 0
+            }
+            
+            let statusKeys2 = Object.keys(statuses2)
+            //console.log(statusKeys2)
+            for (let i = 0; i < statusKeys2.length; i++) {
+                answer2[statuses2[statusKeys2[i]]] += 1
+            }
+            //console.log(answer2)
+            for (let i = 0; i < allClasses2.length; i++) {
+                document.getElementById(`class_${i}_stat_2`).innerHTML = answer2[i]
+            }
+
+            let infectedSet1 = new Set()
+            let infectedSet2 = new Set()
+            Object.keys(statuses2).map(function(d) {
+                if (statuses2[d] == 1) {
+                    infectedSet2.add(d)
+                }
+            })     
+            Object.keys(statuses1).map(function(d) {
+                if (statuses1[d] == 1) {
+                    infectedSet1.add(d)
+                }
+            })         
+            
+            tpSet = intersection(infectedSet2, infectedSet1)
+            fpSet = difference(infectedSet1, infectedSet2)
+            fnSet = difference(infectedSet2, infectedSet1)
+            //tnSet = intersection(infectedSet2, infectedSet1)
+            precision = tpSet.size/(tpSet.size + fpSet.size)
+            recall = tpSet.size/(tpSet.size + fnSet.size)
+            f1Score = (2*precision*recall)/(precision+recall)
+            precision = (isNaN(precision) ? 0 : precision)
+            recall = (isNaN(recall) ? 0 : recall)
+            f1Score = (isNaN(f1Score) ? 0 : f1Score)
+            document.getElementById('tp_stat').innerHTML = tpSet.size
+            document.getElementById('fp_stat').innerHTML = fpSet.size
+            document.getElementById('fn_stat').innerHTML = fnSet.size
+            document.getElementById('tn_stat').innerHTML = parseInt(document.getElementById('total-nodes').innerHTML) - tpSet.size - fpSet.size - fnSet.size
+
+            document.getElementById('precision_stat').innerHTML = precision
+            document.getElementById('recall_stat').innerHTML = recall
+            document.getElementById('f1_stat').innerHTML = f1Score
+        }
+
+        document.getElementById('graph-view-split').style.display="block";
+        document.getElementById('graph-view-single').style.display="none"
+        $(document).ready(function () {
+          bsCustomFileInput.init()
+          getBasicGraphInfo()
+          var slider = document.getElementById("myBar");
+            var sliderTime = document.getElementById("slider-time");
+            slider.oninput = function() {
+                sliderTime.innerHTML = this.value;
+                if (diffusionAvailable) {
+                    getDiffusionData(this.value)
+                } else {
+                    slider.value = 0
+                }
+            }
+        })
+
+        // document.getElementById('graph-type').addEventListener('change', function(){
+        //     if(document.getElementById('graph-type').value === 'single'){
+        //         document.getElementById('graph-view-split').style.display="none";
+        //         document.getElementById('graph-view-single').style.display="block"
+        //     }
+        //     else{
+        //         document.getElementById('graph-view-single').style.display="none";
+        //         document.getElementById('graph-view-split').style.display="block"
+        //     }
+        // })
+
+        function CreatePDFfromHTML() {
+            /*var HTML_Width = $("#report-view").width();
+            var HTML_Height = $("#report-view").height();
+            var top_left_margin = 15;
+            var PDF_Width = HTML_Width + (top_left_margin * 2);
+            var PDF_Height = (PDF_Width * 1.5) + (top_left_margin * 2);
+            var canvas_image_width = HTML_Width;
+            var canvas_image_height = HTML_Height;
+
+            var totalPDFPages = Math.ceil(HTML_Height / PDF_Height) - 1;
+
+            html2canvas($("#report-view")[0]).then(function (canvas) {
+                var imgData = canvas.toDataURL("image/jpeg", 1.0);
+                var pdf = new jsPDF('p', 'pt', [PDF_Width, PDF_Height]);
+                pdf.addImage(imgData, 'JPG', top_left_margin, top_left_margin, canvas_image_width, canvas_image_height);
+                for (var i = 1; i <= totalPDFPages; i++) { 
+                    pdf.addPage(PDF_Width, PDF_Height);
+                    pdf.addImage(imgData, 'JPG', top_left_margin, -(PDF_Height*i)+(top_left_margin*4),canvas_image_width,canvas_image_height);
+                }
+                pdf.save("report.pdf");
+                //$(".html-content").hide();
+            });*/
+            let canvas1 = document.getElementById('RetweetReport1')
+            var imgData1 = Canvas2Image.convertToPNG(canvas1, canvas1.clientWidth/1.2, canvas1.clientHeight/1.2)
+            let canvas2 = document.getElementById('RetweetReport2')
+            var imgData2 = Canvas2Image.convertToPNG(canvas2, canvas2.clientWidth/1.2, canvas2.clientHeight/1.2)
+            let canvas3 = document.getElementById('CompareInfectionReport')
+            var imgData3 = Canvas2Image.convertToPNG(canvas3, canvas3.clientWidth/1.2, canvas3.clientHeight/1.2)
+            let canvas4 = document.getElementById('plotF1Report')
+            var imgData4 = Canvas2Image.convertToPNG(canvas4, canvas4.clientWidth/1.2, canvas4.clientHeight/1.2)
+            let canvas5 = document.getElementById('plotCommonNodes')
+            var imgData5 = Canvas2Image.convertToPNG(canvas5, canvas5.clientWidth/1.2, canvas5.clientHeight/1.2)
+            //console.log(imgData)
+            var printCanvas = $('#report-view').html()
+            //console.log(printCanvas)
+            let userRunStatistics = ""
+            
+            var myWindow = window.open('','','width=800,height=500');
+            myWindow.document.write(
+                "<!Doctype HTML>" +
+                "<html>" + 
+                    "<head>" + 
+                        "<title>DiVA Report</title>" +
+                        "<link rel=stylesheet href='/static/css/bootstrap.min.css'>" + 
+                        '<style>img {page-break-before: auto; page-break-after: auto; page-break-inside: avoid; display: block;}' +
+                        '@media print { .container  {display: inline;}}' +
+                        '</style>' +
+                    "</he" + "ad>" + 
+                    "<body>" +
+                        "<div class='container text-center p-4' style='text-align:center'>" +
+                            "<h3 class='display-3' style='color: #434343'>DiVA REPORT</h" + "3>" + 
+                            '<div class="container row">' +
+                                '<div class="row col-12 text-center"><h4 class="display-4">Graph Statistics</h4></div>' +
+                                '<div class="row col-12"><div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Nodes: </h6><h5>' + document.getElementById('total-nodes').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Edges: </h6><h5>' + document.getElementById('total-edges').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Average Degree: </h6><h5>' + document.getElementById('graph-degree').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Density: </h6><h5>' + document.getElementById('graph-density').innerHTML + '</h5></div></div>' +  
+                                '<div class="row col-12 text-center"><h4 class="display-4">Algorithm Params</h4></div>' +
+                                '<div class="row col-12"><div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Nodes: </h6><h5>' + document.getElementById('total-nodes').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Total Edges: </h6><h5>' + document.getElementById('total-edges').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Average Degree: </h6><h5>' + document.getElementById('graph-degree').innerHTML + '</h5></div>' +
+                                '<div class="col text-center border border-secondary rounded m-1 p-2"><h6>Density: </h6><h5>' + document.getElementById('graph-density').innerHTML + '</h5></div></div>' +  
+                            '</div>' +
+                            "<img src=" + imgData1.src + ">" +
+                            "<img src=" + imgData2.src + ">" +
+                            "<img src=" + imgData3.src + ">" +
+                            "<img src=" + imgData4.src + ">" +
+                            "<img src=" + imgData5.src + ">" +
+                        "</d" + "iv>" + 
+                        "<script src='/static/js/jquery.js'><\/scr" + "ipt>" +
+                    "</bo" + "dy>" +
+                "</ht" + "ml>" 
+            )
+            //myWindow.document.write("<script src='/static/js/jquery.js'><\/scr" + "ipt>")
+            //myWindow.document.write("<script src='/static/js/chart2.8.js'><\/scr" +  "ipt>");
+            //myWindow.document.write(`<img src=${imgData.src} >`);
+            //myWindow.document.write("<script>win" + "dow.print()<\/scr" +  "ipt>")
+            myWindow.document.close()
+
+        }
+
+    </script>
+</body>
+</html>

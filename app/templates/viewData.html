@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data View - DiVA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/datatables.min.css') }}" />
+    
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+
+        td.highlight {
+            background-color: whitesmoke !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="p-5" style="width: 100%">
+        <table id="data-table" class="table table-striped table-bordered dataTable" style="width:100%">
+        </table>
+        
+    </div>
+    <script src="{{ url_for('static', filename='js/tables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/buttons.print.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pdfmake.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vfs_fonts.js') }}"></script>
+    <script>
+        function getAllNodeData() {
+
+            const XHR = new XMLHttpRequest();
+            // Bind the FormData object and the form element
+            // Define what happens on successful data submission
+            XHR.addEventListener( "load", function(event) {
+                let response = JSON.parse(event.target.responseText)
+                let data = response['data']
+                let rows = []
+                let columns = ['id']
+                Array.prototype.push.apply(columns,Object.keys(data[0][1]))
+                let TableHeadString = "<thead><tr>"
+                for (let c = 0; c < columns.length; c++) {
+                    TableHeadString += `<th>${columns[c]}</th>`
+                }
+                TableHeadString += "</tr></thead>"
+                let TableBodyString = "<tbody>"
+                for (let r = 0; r < data.length; r++) {
+                    let tableRowString = "<tr>"
+                    tableRowString += `<td>${data[r][0]}</td>`
+                    for (let c = 1; c < columns.length;c++) {
+                        tableRowString += `<td>${data[r][1][columns[c]]}</td>`    
+                    }
+                    tableRowString += "</tr>"
+                    //console.log(tableRowString)
+                    TableHeadString += tableRowString
+                }
+                TableBodyString += "</tbody>"
+                document.getElementById('data-table').innerHTML = TableHeadString + TableBodyString
+                var table = $('#data-table').DataTable({
+                    responsive: true,
+                    buttons: [
+                        'csv', 'print', 'pdf'
+                    ],
+                    select: true,
+                    colReorder: true
+                });
+                $('#data-table tbody')
+                .on( 'mouseenter', 'td', function () {
+                    var colIdx = table.cell(this).index().column;
+        
+                    //$( table.cells().nodes() ).removeClass( 'highlight' );
+                    //$( table.column( colIdx ).nodes() ).addClass( 'highlight' );
+                } );
+            });
+
+            // Define what happens in case of error
+            XHR.addEventListener( "error", function( event ) {
+            alert( 'Oops! Something went wrong.' );
+            } );
+
+            // Set up our request
+            XHR.open( "GET", "/api/getAllNodeInfo" );
+
+            // The data sent is what the user provided in the form
+            XHR.send();    
+        }
+        $(document).ready(function() {
+            getAllNodeData()
+        } );
+    </script>
+</body>
+</html>

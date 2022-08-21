@@ -1,0 +1,2 @@
+FLASK_APP=divison.py
+FLASK_ENV=development

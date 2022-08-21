@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>DiVA</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+        <style>
+            body {
+                margin:0;
+                padding:0;
+            }
+            canvas{
+                position:fixed;
+                left:0;
+                top:0;
+                z-index:-1;
+                height: 100vh;
+                width: 100vw;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar is-dark">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item">
+                    <img src="{{url_for('static', filename='logo.svg')}}" alt="Logo">
+                    </a>
+                    <span class="navbar-burger burger" data-target="navbarMenuHeroA" onclick="togglenavbar()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                </div>
+                <div id="navbar-items" class="navbar-menu" onclick="togglenavbar()">
+                    <div class="navbar-end">
+                    <a class="navbar-item is-active">
+                        Home
+                    </a>
+                    <a class="navbar-item">
+                        Examples
+                    </a>
+                    <a class="navbar-item">
+                        Documentation
+                    </a>
+                    <span class="navbar-item">
+                        <a class="button is-dark is-inverted">
+                        <span class="icon">
+                            <i class="fab fa-github"></i>
+                        </span>
+                        <span>REPOSITORY</span>
+                        </a>
+                    </span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div id="myContainer"></div>
+        <section class="hero is-small">
+            <!-- Hero head: will stick at the top -->
+            <!-- Hero content: will be in the middle -->
+            <div class="hero-body">
+              <div class="container has-text-centered">
+                <h1 class="title" style="font-size: 3.6rem;">
+                    <img src="{{url_for('static', filename='logo_black.svg')}}" style="max-height: 150px" />
+                </h1>
+                <h2 class="subtitle">Diffusion Visualization in Social Networks</h2>
+              </div>
+            </div>
+          
+            <!-- Hero footer: will stick at the bottom -->
+            <div class="hero-footer pb-4"></div>
+        </section>
+        <section>
+            <div class="container">
+                <p class="is-size-4"><b>What is DiVison?</b></p>
+                <p class="is-size-5">
+                    <div class="content">
+                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Commodi earum perspiciatis eligendi reprehenderit quia harum ut sapiente cupiditate, odit ex veniam. Quidem nulla tenetur, quia modi adipisci earum ipsa quisquam!
+                    </div>
+                </p>
+                <a href="#main" class="button is-primary is-rounded is-fullwidth">Try DiVison</a>
+                <div class="my-5"></div>
+            </div>
+            <div class="container">
+                <p class="is-size-4"><b>Features of DiVison?</b></p>
+                <p class="is-size-5">
+                    <div class="content">
+                        <ol type="1">
+                            <li><b>Formats supported</b>: Adjacency List, Edge List, GEFX, GraphML</li>
+                            <li><b>Algorithms supported</b>: Independent Cascade, Profile Threshold, SIR, SIS</li>
+                            <li><b>Layouts Provided</b>: COLA, BFS, Circular BFS</li>
+                        </ol>
+                    </div>
+                </p>
+                <div class="my-5"></div>
+            </div>
+        </section>
+        <section id="main">
+            <div class="container">
+                <form method="post" action="/graph" enctype="multipart/form-data">
+                    <div class="field">
+                        <p class="control">
+                            <label class="label is-size-4">Select Graph</label>
+                        </p>
+                    </div>
+                    <div class="columns">
+                        <div class="column is-full">
+                            <div class="control select is-fullwidth">
+                                <select required id="graph" name="graph">
+                                    <option value="385">385 nodes</option>
+                                    <option value="500">500 nodes</option>
+                                    <option value="1000">1000 nodes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="columns">
+                        <div class="column is-full"  style="display: flex; align-items: center; justify-content: center;">
+                            <label class="label"> &nbsp;OR</label>
+                        </div>
+                    </div>
+                    <div class="columns">
+                        <div class="column is-half">
+                            <p class="control">
+                                <div class="file has-name is-fullwidth">
+                                    <label class="file-label">
+                                        <input class="file-input" type="file" name="graph" id="fileToUpload">
+                                        <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Upload Graph
+                                        </span>
+                                        </span>
+                                        <span class="file-name">
+                                            Nothing has been selected
+                                        </span>
+                                    </label>
+                                </div>
+                            </p>
+                        </div>
+                        <div class="column is-half">
+                            <p class="control">
+                                <div class="control select is-fullwidth">
+                                    <select required id="format" name="format">
+                                        <option value="None">Select Graph Format</option>
+                                        <option value="adjlist">Adjacency List</option>
+                                        <option value="edgelist">Edge List</option>
+                                        <option value="GEFX">GEFX</option>
+                                        <option value="GraphML">GraphML</option>
+                                        <option value="JSON">Json</option>
+                                    </select>
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <div class="columns">
+                        <div class="column">
+                            <div class="field">
+                                <p class="control">
+                                    <label class="label is-size-4">Select Layout</label>
+                                </p>
+                            </div>
+                            <div class="field">
+                                <div class="control" >
+                                    <div class="select" style="width:100%">
+                                    <select style="width: 100%;" required id="layout" name="layout">
+                                        <option value="cola">Cola</option>
+                                        <option value="bfs">BFS Tree</option>
+                                        <option value="circular-bfs">Circular BFS Tree</option>
+                                    </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="field">
+                                <p class="control">
+                                    <label class="label is-size-4">Upload Seed Nodes</label>
+                                </p>
+                            </div>
+                            <div class="field">
+                                <div class="control file has-name is-fullwidth">
+                                    <label class="file-label">
+                                        <input class="file-input" type="file" name="seeds" id="seedNodes">
+                                        <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Upload Seeds
+                                        </span>
+                                        </span>
+                                        <span class="file-name">
+                                            Nothing has been selected
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-link is-fullwidth">RUN DIFFUSION</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <footer class="mt-5 pt-4 pb-2">
+            <div class="content has-text-centered">
+                <strong>Divison</strong> by LCS2
+            </div>
+          </footer>
+        <script>
+            var navbarItems = document.getElementById('navbar-items')
+            function togglenavbar() {
+                navbarItems.classList.toggle('is-active')
+            }
+
+        </script>
+        <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/p5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/addons/p5.dom.min.js"></script>
+        <script src="./sketch.js"></script>-->
+    </body>
+</html>
